@@ -6,8 +6,9 @@ import {
 } from "../controllers/message.controller.js"
 
 const router = Router()
+router.use(is_authenticated)
 
-router.post("/send/:username", is_authenticated, send_message)
-router.get("/get-messages/:username", is_authenticated, get_messages)
+router.post("/send/:username", send_message)
+router.get("/get-messages/:username", get_messages)
 
 export default router

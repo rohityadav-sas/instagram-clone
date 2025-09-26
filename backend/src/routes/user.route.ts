@@ -14,6 +14,7 @@ import {
 	get_user_followers,
 	get_user_following,
 	is_following,
+	delete_account,
 } from "../controllers/user.controller.js"
 import { is_authenticated } from "../middlewares/is_authenticated.js"
 import multer from "multer"
@@ -32,10 +33,10 @@ router.get("/suggested", is_authenticated, get_suggested_users)
 router.get("/search", is_authenticated, search_users)
 router.get("/is-following/:identifier", is_authenticated, is_following)
 router.get("/:identifier", is_authenticated, get_profile)
-
-router.post("/toggle-follow/:identifier", is_authenticated, toggle_follow_user)
 router.get("/:identifier/followers", is_authenticated, get_user_followers)
 router.get("/:identifier/following", is_authenticated, get_user_following)
+
+router.post("/toggle-follow/:identifier", is_authenticated, toggle_follow_user)
 router.post("/block/:identifier", is_authenticated, block_user)
 router.post("/unblock/:identifier", is_authenticated, unblock_user)
 router.post(
@@ -44,5 +45,7 @@ router.post(
 	upload.single("profile_picture"),
 	edit_profile
 )
+
+router.delete("/delete", is_authenticated, delete_account)
 
 export default router

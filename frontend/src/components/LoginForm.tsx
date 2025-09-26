@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import Image from "next/image"
 import toast from "react-hot-toast"
@@ -23,7 +22,6 @@ export function LoginForm({
 	...props
 }: React.ComponentProps<"div">) {
 	const [loading, setLoading] = useState(false)
-	const router = useRouter()
 	const setUser = useUserStore((state) => state.setUser)
 
 	const {
@@ -42,9 +40,9 @@ export function LoginForm({
 			})
 			const { message, success } = response.data
 			if (!success) throw new Error(message)
-			router.push("/")
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
+			window.location.href = "/"
 
 			return message
 		}
@@ -109,7 +107,11 @@ export function LoginForm({
 									</p>
 								)}
 							</div>
-							<Button type="submit" className="w-full" disabled={loading}>
+							<Button
+								type="submit"
+								className="w-full cursor-pointer"
+								disabled={loading}
+							>
 								{loading ? "Signing in..." : "Login"}
 							</Button>
 							<div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -173,7 +175,7 @@ export function LoginForm({
 					</form>
 					<div className="bg-muted relative hidden md:block">
 						<Image
-							src="/login_banner.png"
+							src="/login_banner1.jpg"
 							alt="Login banner"
 							fill
 							sizes="(max-width: 768px) 0vw, 50vw"
@@ -183,10 +185,6 @@ export function LoginForm({
 					</div>
 				</CardContent>
 			</Card>
-			<div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-				By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-				and <a href="#">Privacy Policy</a>.
-			</div>
 		</div>
 	)
 }

@@ -16,17 +16,18 @@ import { get_user_posts } from "../controllers/post.controller.js"
 
 const upload = multer()
 const router = Router()
+router.use(is_authenticated)
 
-router.post("/create", is_authenticated, upload.single("image"), create_post)
-router.post("/delete/:post_id", is_authenticated, delete_post)
-router.post("/toggle-like/:post_id", is_authenticated, toggle_like_post)
-router.post("/toggle-bookmark/:post_id", is_authenticated, toggle_bookmark_post)
+router.post("/create", upload.single("image"), create_post)
+router.post("/delete/:post_id", delete_post)
+router.post("/toggle-like/:post_id", toggle_like_post)
+router.post("/toggle-bookmark/:post_id", toggle_bookmark_post)
 
-router.get("/feed", is_authenticated, get_feed_posts)
-router.get("/explore", is_authenticated, get_explore_posts)
-router.get("/search", is_authenticated, search_posts)
-router.get("/bookmarks", is_authenticated, get_bookmarked_posts)
-router.get("/:post_id/likes", is_authenticated, get_post_likes)
-router.get("/:username", is_authenticated, get_user_posts)
+router.get("/feed", get_feed_posts)
+router.get("/explore", get_explore_posts)
+router.get("/search", search_posts)
+router.get("/bookmarks", get_bookmarked_posts)
+router.get("/:post_id/likes", get_post_likes)
+router.get("/:username", get_user_posts)
 
 export default router

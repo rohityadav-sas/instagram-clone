@@ -12,7 +12,7 @@ const chat_schema = new Schema(
 	{ timestamps: true }
 )
 
-chat_schema.index({ members: 1, updatedAt: -1 })
+chat_schema.index({ members: 1 })
 
 const Chat = model("Chat", chat_schema)
 

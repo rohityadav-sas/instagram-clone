@@ -18,7 +18,6 @@ export default function Page() {
 			return response.data.data
 		},
 		enabled: !!username,
-		staleTime: 1000 * 60 * 5,
 		retry: false,
 	})
 	const isOwnProfile = currentUsername === username

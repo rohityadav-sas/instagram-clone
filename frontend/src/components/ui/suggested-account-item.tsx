@@ -3,7 +3,6 @@ import { CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { useFollowUser } from "@/hooks/useFollowUser"
 import { type SuggestedUser } from "@/hooks/useSuggestedUsers"
-import { useRouter } from "next/navigation"
 
 interface SuggestedAccountItemProps {
 	account: SuggestedUser
@@ -14,7 +13,6 @@ const SuggestedAccountItem = ({ account }: SuggestedAccountItemProps) => {
 		account.username,
 		account.isFollowing || false
 	)
-	const router = useRouter()
 	return (
 		<div className="flex items-center gap-3 py-2">
 			{/* Avatar */}

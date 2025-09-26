@@ -88,6 +88,7 @@ const Post = ({ postData }: { postData: Post }) => {
 			{/* Post Actions */}
 			<div className="p-4">
 				<PostActions
+					postData={{ ...postData, comments }}
 					isLiked={liked}
 					isBookmarked={bookmarked}
 					likesCount={likesCount}

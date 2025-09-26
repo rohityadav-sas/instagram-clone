@@ -32,10 +32,8 @@ export const useSuggestedUsers = (options?: {
 			}
 			return data.data as SuggestedUser[]
 		},
-		staleTime: options?.staleTime || 1000 * 60 * 5, // 5 minutes default
 		enabled: options?.enabled !== false,
 	})
-
 	return {
 		data,
 		isLoading,

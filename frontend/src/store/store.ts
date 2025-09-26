@@ -41,4 +41,20 @@ const useUserStore = create<User>()(
 	)
 )
 
-export { useUserStore }
+const useOnlineUsersStore = create<{
+	onlineUsers: string[]
+	setOnlineUsers: (users: string[]) => void
+	following: string[]
+	setFollowing: (users: string[]) => void
+	followers: string[]
+	setFollowers: (users: string[]) => void
+}>((set) => ({
+	onlineUsers: [],
+	following: [],
+	followers: [],
+	setOnlineUsers: (users) => set({ onlineUsers: users }),
+	setFollowing: (users) => set({ following: users }),
+	setFollowers: (users) => set({ followers: users }),
+}))
+
+export { useUserStore, useOnlineUsersStore }

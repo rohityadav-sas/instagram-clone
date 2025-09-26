@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Bookmark, Heart, MessageCircle, Send } from "lucide-react"
-import axios_instance from "@/config/axios"
-import toast from "react-hot-toast"
 import { motion } from "framer-motion"
 import CommentInput from "./comment-input"
 import UsersListDialog from "./users-list-dialog"
+import CommentsDialog from "./comments-dialog"
+import { Post } from "@/types/post"
 
 interface PostActionsProps {
 	isLiked: boolean
@@ -17,9 +17,11 @@ interface PostActionsProps {
 	hideLikesCount?: boolean
 	hideCommentInput?: boolean
 	postId: string
+	postData?: Post
 }
 
 const PostActions = ({
+	postData,
 	postId,
 	isLiked,
 	isBookmarked = false,
@@ -44,7 +46,6 @@ const PostActions = ({
 	const handleBookmark = async () => {
 		if (onToggleBookmark) onToggleBookmark()
 	}
-
 	return (
 		<div className="flex flex-col">
 			<div className="flex items-center justify-between w-full">
@@ -64,13 +65,32 @@ const PostActions = ({
 							/>
 						</motion.div>
 					</button>
+					{postData ? (
+						<CommentsDialog
+							postData={postData}
+							isLiked={isLiked}
+							isBookmarked={isBookmarked}
+							likesCount={likesCount}
+							bookmarksCount={bookmarksCount}
+							toggleBookmark={handleBookmark}
+							toggleLike={likePost}
+						>
+							<button className="p-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer">
+								<MessageCircle
+									className="w-6 h-6 text-gray-700 hover:text-gray-900 scale-x-[-1]"
+									onClick={() => commentInputRef.current?.focus()}
+								/>
+							</button>
+						</CommentsDialog>
+					) : (
+						<button className="p-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer">
+							<MessageCircle
+								className="w-6 h-6 text-gray-700 hover:text-gray-900 scale-x-[-1]"
+								onClick={() => commentInputRef.current?.focus()}
+							/>
+						</button>
+					)}
 
-					<button className="p-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer">
-						<MessageCircle
-							className="w-6 h-6 text-gray-700 hover:text-gray-900 scale-x-[-1]"
-							onClick={() => commentInputRef.current?.focus()}
-						/>
-					</button>
 					<button className="p-2 hover:bg-gray-50 rounded-full transition-colors cursor-pointer">
 						<Send className="w-6 h-6 text-gray-700 hover:text-gray-900" />
 					</button>

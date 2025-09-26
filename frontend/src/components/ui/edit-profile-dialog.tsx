@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Camera, X } from "lucide-react"
 import Image from "next/image"
@@ -16,8 +16,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEditProfile } from "@/hooks/useEditProfile"
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation"
-import { useQueryClient } from "@tanstack/react-query"
 import { useUserStore } from "@/store/store"
 import axios_instance from "@/config/axios"
 
@@ -45,9 +43,7 @@ const EditProfileDialog = ({
 	const [open, setOpen] = useState(false)
 	const [previewImage, setPreviewImage] = useState<string | null>(null)
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
-	const { username, setUserAsync } = useUserStore()
-	const router = useRouter()
-	const queryClient = useQueryClient()
+	const { setUserAsync } = useUserStore()
 
 	const { editProfile, isLoading } = useEditProfile()
 

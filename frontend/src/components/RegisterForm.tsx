@@ -188,7 +188,11 @@ export function SignupForm({
 							{errors.terms && (
 								<p className="text-red-500 text-sm">{errors.terms.message}</p>
 							)}
-							<Button type="submit" className="w-full" disabled={loading}>
+							<Button
+								type="submit"
+								className="w-full cursor-pointer"
+								disabled={loading}
+							>
 								{loading ? "Creating Account..." : "Create Account"}
 							</Button>
 							<div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -252,7 +256,7 @@ export function SignupForm({
 					</form>
 					<div className="bg-muted relative hidden md:block">
 						<Image
-							src="/login_banner.png"
+							src="/login_banner1.jpg"
 							alt="Login banner"
 							fill
 							sizes="(max-width: 768px) 0vw, 50vw"

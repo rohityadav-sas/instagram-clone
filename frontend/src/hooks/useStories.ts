@@ -26,7 +26,6 @@ export const useStories = () => {
 			}
 			return response.data.stories
 		},
-		staleTime: 1000 * 60 * 5, // 5 minutes
 		retry: 3,
 		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 	})
@@ -211,7 +210,6 @@ export const useUserStories = (userId: string) => {
 			return response.data.stories
 		},
 		enabled: !!userId,
-		staleTime: 1000 * 60 * 5, // 5 minutes
 	})
 
 	return {

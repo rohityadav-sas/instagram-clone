@@ -1,7 +1,6 @@
 import { CheckCircle, Grid3X3, Settings } from "lucide-react"
 import Image from "next/image"
-import React, { useEffect, useState } from "react"
-import Post from "./post"
+import React, { useEffect } from "react"
 import PostGrid from "./post-grid"
 import axios_instance from "@/config/axios"
 import { useQuery } from "@tanstack/react-query"
@@ -10,6 +9,7 @@ import { useFollowUser } from "@/hooks/useFollowUser"
 import EditProfileDialog from "./edit-profile-dialog"
 import BlockUserDialog from "./block-user-dialog"
 import UsersListDialog from "./users-list-dialog"
+import DeleteUserDialog from "./delete-user-dialog"
 
 interface AboutProps {
 	username: string
@@ -54,7 +54,6 @@ const About = ({
 			return response.data.data.posts
 		},
 		enabled: !!username,
-		staleTime: 1000 * 60 * 5,
 	})
 
 	const {
@@ -228,6 +227,11 @@ const About = ({
 								<BlockUserDialog username={username} isBlocked={isBlocked}>
 									<Settings className="w-5 h-5 text-gray-600 cursor-pointer" />
 								</BlockUserDialog>
+							)}
+							{isOwnProfile && (
+								<DeleteUserDialog>
+									<Settings className="w-5 h-5 text-gray-600 cursor-pointer" />
+								</DeleteUserDialog>
 							)}
 						</div>
 

@@ -8,10 +8,11 @@ import {
 } from "../controllers/comment.controller.js"
 
 const router = Router()
+router.use(is_authenticated)
 
-router.post("/create/:post_id", is_authenticated, create_comment)
-router.post("/delete/:comment_id", is_authenticated, delete_comment)
-router.post("/toggle-like/:comment_id", is_authenticated, toggle_like_comment)
-router.get("/get/:post_id", is_authenticated, get_comments)
+router.post("/create/:post_id", create_comment)
+router.post("/delete/:comment_id", delete_comment)
+router.post("/toggle-like/:comment_id", toggle_like_comment)
+router.get("/get/:post_id", get_comments)
 
 export default router

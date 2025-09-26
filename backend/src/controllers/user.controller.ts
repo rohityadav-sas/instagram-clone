@@ -6,6 +6,9 @@ import ENV from "../config/env.js"
 import cloudinary from "../config/cloudinary.js"
 import { get_data_uri } from "../utils/data_uri.js"
 import mongoose from "mongoose"
+import Post from "../models/post.model.js"
+import Comment from "../models/comment.model.js"
+import Story from "../models/story.model.js"
 
 export const register_user = async (req: Request, res: Response) => {
 	try {
@@ -260,14 +263,12 @@ export const edit_profile = async (req: Request, res: Response) => {
 export const get_suggested_users = async (req: Request, res: Response) => {
 	try {
 		const current_user = await User.findById(req.id)
-		if (!current_user)
-			return void res
-				.status(401)
-				.json({ message: "Unauthorized", success: false })
+		if (!current_user) {
+			return res.status(401).json({ message: "Unauthorized", success: false })
+		}
 
 		const limit = parseInt(req.query.limit as string) || 10
 
-		// Exclude current user + already-followed + blocked users + users who blocked current user
 		const excluded = [
 			current_user._id,
 			...current_user.following,
@@ -275,6 +276,7 @@ export const get_suggested_users = async (req: Request, res: Response) => {
 		]
 
 		const users = await User.aggregate([
+			// Step 1: Match only "friends of friends"
 			{
 				$match: {
 					_id: { $nin: excluded },
@@ -282,76 +284,69 @@ export const get_suggested_users = async (req: Request, res: Response) => {
 				},
 			},
 
-			// Lookup followers + posts to compute score
-			{
-				$lookup: {
-					from: "posts",
-					localField: "_id",
-					foreignField: "author",
-					as: "posts",
-				},
-			},
+			// Step 2: Keep only users followed by current_user.following
 			{
 				$addFields: {
-					followersCount: { $size: "$followers" },
-					lastPostAt: { $max: "$posts.createdAt" },
-				},
-			},
-
-			// Compute score for ranking
-			{
-				$addFields: {
-					score: {
-						$add: [
-							{ $multiply: ["$followersCount", 2] },
-							{
-								$cond: [
-									{ $ifNull: ["$lastPostAt", false] },
-									{
-										$divide: [
-											1,
-											{
-												$add: [
-													{
-														$divide: [
-															{ $subtract: [new Date(), "$lastPostAt"] },
-															3600000,
-														],
-													},
-													2,
-												],
-											},
-										],
-									},
-									0,
-								],
-							},
-						],
+					mutualFollowCount: {
+						$size: {
+							$setIntersection: ["$followers", current_user.following],
+						},
 					},
 				},
 			},
 
-			// Only project the minimal fields you need
+			// Step 3: Only suggest if at least 1 mutual follower exists
+			{
+				$match: {
+					mutualFollowCount: { $gt: 0 },
+				},
+			},
+
+			// Step 4: Sort by strongest mutual connections
+			{ $sort: { mutualFollowCount: -1 } },
+
+			// Step 5: Limit results
+			{ $limit: limit },
+
+			// Step 6: Lookup mutual follower usernames
+			{
+				$lookup: {
+					from: "users",
+					localField: "followers",
+					foreignField: "_id",
+					as: "mutualFollowers",
+					pipeline: [
+						{
+							$match: {
+								_id: { $in: current_user.following }, // keep only mutuals
+							},
+						},
+						{ $project: { username: 1 } },
+					],
+				},
+			},
 			{
 				$project: {
 					username: 1,
 					profile_picture: 1,
 					bio: 1,
+					isVerified: 1,
+					followedBy: "$mutualFollowers.username", // mutual usernames
+					isFollowing: { $literal: false }, // keep shape same as frontend expects
 				},
 			},
-
-			{ $sort: { score: -1, followersCount: -1 } },
-			{ $limit: limit },
 		])
 
-		res.status(200).json({
+		return res.status(200).json({
 			message: "Suggested users retrieved successfully",
 			data: users,
 			success: true,
 		})
 	} catch (err) {
 		console.error("Error getting suggested users", err)
-		res.status(500).json({ message: "Internal server error", success: false })
+		return res
+			.status(500)
+			.json({ message: "Internal server error", success: false })
 	}
 }
 
@@ -813,5 +808,27 @@ export const get_user_following = async (req: Request, res: Response) => {
 			success: false,
 		})
 		return
+	}
+}
+
+export const delete_account = async (req: Request, res: Response) => {
+	try {
+		const user_id = req.id
+		await cloudinary.uploader.destroy(
+			`instagram-clone/users/${user_id}/profile_picture`
+		)
+		await User.findByIdAndDelete(user_id)
+		await Post.deleteMany({ author: user_id })
+		await Story.deleteMany({ author: user_id })
+		await Comment.deleteMany({ author: user_id })
+		return res
+			.status(200)
+			.json({ message: "Account deleted successfully", success: true })
+	} catch (err) {
+		console.error("Error deleting user account", err)
+		return res.status(500).json({
+			message: "Internal server error",
+			success: false,
+		})
 	}
 }

@@ -1,59 +1,93 @@
 import { useState } from "react"
 import Image from "next/image"
 import { UserCircle2, Send } from "lucide-react"
-import { useUserStore } from "@/store/store"
+import { useOnlineUsersStore, useUserStore } from "@/store/store"
 
-// Temporary mock data until real API integration
-const mockConversations = [
+// Mock users
+const mockUsers = [
 	{
-		id: "conv-1",
-		user: {
-			username: "john_doe",
-			profile_picture: "/default-avatar.svg",
-		},
-		lastMessage: "Hey! How was your trip?",
-		timestamp: "2m",
-		unread: true,
+		_id: "user-1",
+		username: "john_doe",
+		profile_picture: "/default-avatar.svg",
 		isOnline: true,
 	},
 	{
-		id: "conv-2",
-		user: {
-			username: "emma_wilson",
-			profile_picture: "/default-avatar.svg",
-		},
-		lastMessage: "Thanks for the recommendation!",
-		timestamp: "1h",
-		unread: false,
+		_id: "user-2",
+		username: "emma_wilson",
+		profile_picture: "/default-avatar.svg",
 		isOnline: false,
 	},
 ]
 
+// Mock chats (Chat docs)
+const mockChats = [
+	{
+		_id: "chat-1",
+		members: ["user-1", "user-2"],
+		last_message: "msg-2",
+		updatedAt: "2024-09-25T14:32:00Z",
+	},
+]
+
+// Mock messages (Message docs)
 const mockMessages = [
 	{
-		id: "msg-1",
-		text: "Hey! How was your trip?",
-		timestamp: "2:30 PM",
-		isOwnMessage: false,
+		_id: "msg-1",
+		sender: "user-1",
+		chat: "chat-1",
+		message: "Hey! How was your trip?",
+		read_by: ["user-1"],
+		createdAt: "2024-09-25T14:30:00Z",
 	},
 	{
-		id: "msg-2",
-		text: "It was amazing! The sunset views were incredible 🌅",
-		timestamp: "2:32 PM",
-		isOwnMessage: true,
+		_id: "msg-2",
+		sender: "user-2",
+		chat: "chat-1",
+		message: "It was amazing! The sunset views were incredible 🌅",
+		read_by: ["user-1", "user-2"],
+		createdAt: "2024-09-25T14:32:00Z",
 	},
 ]
 
 const MessagesComponent = () => {
-	const user = useUserStore((state) => state)
-	const [selectedConversation, setSelectedConversation] = useState(
-		mockConversations[0]
-	)
+	const [selectedChat, setSelectedChat] = useState(mockChats[0])
 	const [newMessage, setNewMessage] = useState("")
 
+	const currentUser = useUserStore((state) => state.username)
+
+	const onlineUsers = useOnlineUsersStore((state) => state.onlineUsers)
+	const following = useOnlineUsersStore((state) => state.following)
+	const followers = useOnlineUsersStore((state) => state.followers)
+
+	console.log("Online Users from store: ", onlineUsers)
+	console.log("Following: ", following)
+	console.log("Followers: ", followers)
+
+	const conversations = mockChats.map((chat) => {
+		const otherUserId = chat.members.find((id) => id !== currentUser)!
+		const otherUser = mockUsers.find((u) => u._id === otherUserId)!
+		const lastMessage = mockMessages.find((m) => m._id === chat.last_message)
+
+		return {
+			...chat,
+			otherUser,
+			lastMessage,
+		}
+	})
+
+	// Get messages for selected chat
+	const chatMessages = mockMessages
+		.filter((m) => m.chat === selectedChat._id)
+		.map((m) => ({
+			...m,
+			isOwnMessage: m.sender === currentUser,
+		}))
+
+	// Send new message
 	const sendMessage = () => {
 		if (newMessage.trim()) {
 			console.log("Sending message:", newMessage)
+			// Normally you'd push to DB + socket here
 			setNewMessage("")
 		}
 	}
@@ -64,24 +98,25 @@ const MessagesComponent = () => {
 			<div className="w-80 border-r border-gray-200 flex flex-col">
 				{/* Header */}
 				<div className="p-4 border-b border-gray-200">
-					<h2 className="text-xl font-semibold">{user.username}</h2>
+					<h2 className="text-xl font-semibold">Chats</h2>
 				</div>
 
 				{/* Conversations */}
 				<div className="flex-1 overflow-y-auto">
-					{mockConversations.map((conversation) => (
+					{conversations.map((conv) => (
 						<div
-							key={conversation.id}
-							onClick={() => setSelectedConversation(conversation)}
+							key={conv._id}
+							onClick={() => setSelectedChat(conv)}
 							className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 ${
-								selectedConversation.id === conversation.id ? "bg-gray-100" : ""
+								selectedChat._id === conv._id ? "bg-gray-100" : ""
 							}`}
 						>
+							{/* Avatar */}
 							<div className="relative">
-								{conversation.user.profile_picture ? (
+								{conv.otherUser.profile_picture ? (
 									<Image
-										src={conversation.user.profile_picture}
-										alt={conversation.user.username}
+										src={conv.otherUser.profile_picture}
+										alt={conv.otherUser.username}
 										width={48}
 										height={48}
 										className="rounded-full object-cover"
@@ -89,32 +124,29 @@ const MessagesComponent = () => {
 								) : (
 									<UserCircle2 className="w-12 h-12 text-gray-400" />
 								)}
-								{conversation.isOnline && (
+								{conv.otherUser.isOnline && (
 									<div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
 								)}
 							</div>
+
+							{/* Info */}
 							<div className="flex-1 min-w-0">
 								<div className="flex items-center justify-between">
 									<p className="font-semibold text-sm truncate">
-										{conversation.user.username}
+										{conv.otherUser.username}
 									</p>
-									<span className="text-xs text-gray-500">
-										{conversation.timestamp}
-									</span>
+									<span className="text-xs text-gray-500">2m</span>
 								</div>
 								<div className="flex items-center justify-between">
 									<p
 										className={`text-sm truncate ${
-											conversation.unread
-												? "font-medium text-gray-900"
-												: "text-gray-500"
+											conv.lastMessage
+												? "text-gray-900"
+												: "text-gray-500 italic"
 										}`}
 									>
-										{conversation.lastMessage}
+										{conv.lastMessage?.message || "No messages yet"}
 									</p>
-									{conversation.unread && (
-										<div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2"></div>
-									)}
 								</div>
 							</div>
 						</div>
@@ -126,32 +158,40 @@ const MessagesComponent = () => {
 			<div className="flex-1 flex flex-col">
 				{/* Chat Header */}
 				<div className="p-4 border-b border-gray-200 flex items-center gap-3">
-					{selectedConversation.user.profile_picture ? (
-						<Image
-							src={selectedConversation.user.profile_picture}
-							alt={selectedConversation.user.username}
-							width={40}
-							height={40}
-							className="rounded-full object-cover"
-						/>
-					) : (
-						<UserCircle2 className="w-10 h-10 text-gray-400" />
-					)}
-					<div>
-						<p className="font-semibold">
-							{selectedConversation.user.username}
-						</p>
-						<p className="text-xs text-gray-500">
-							{selectedConversation.isOnline ? "Active now" : "Active 2h ago"}
-						</p>
-					</div>
+					{(() => {
+						const otherUserId = selectedChat.members.find(
+							(id) => id !== currentUser
+						)!
+						const otherUser = mockUsers.find((u) => u._id === otherUserId)!
+						return (
+							<>
+								{otherUser.profile_picture ? (
+									<Image
+										src={otherUser.profile_picture}
+										alt={otherUser.username}
+										width={40}
+										height={40}
+										className="rounded-full object-cover"
+									/>
+								) : (
+									<UserCircle2 className="w-10 h-10 text-gray-400" />
+								)}
+								<div>
+									<p className="font-semibold">{otherUser.username}</p>
+									<p className="text-xs text-gray-500">
+										{otherUser.isOnline ? "Active now" : "Offline"}
+									</p>
+								</div>
+							</>
+						)
+					})()}
 				</div>
 
 				{/* Messages */}
 				<div className="flex-1 overflow-y-auto p-4 space-y-4">
-					{mockMessages.map((message) => (
+					{chatMessages.map((message) => (
 						<div
-							key={message.id}
+							key={message._id}
 							className={`flex ${
 								message.isOwnMessage ? "justify-end" : "justify-start"
 							}`}
@@ -163,7 +203,7 @@ const MessagesComponent = () => {
 										: "bg-gray-200 text-gray-900"
 								}`}
 							>
-								<p className="text-sm">{message.text}</p>
+								<p className="text-sm">{message.message}</p>
 							</div>
 						</div>
 					))}

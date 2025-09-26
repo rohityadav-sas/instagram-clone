@@ -8,12 +8,7 @@ import {
 } from "@/hooks/useSuggestedUsers"
 
 const ExploreComponent = () => {
-	const {
-		data: posts,
-		isError,
-		error,
-		isLoading,
-	} = useQuery({
+	const { data: posts, isLoading } = useQuery({
 		queryKey: ["explorePosts"],
 		queryFn: async () => {
 			const { data } = await axios_instance.get("/posts/explore")

@@ -12,23 +12,15 @@ import multer from "multer"
 
 const upload = multer()
 const router = Router()
+router.use(is_authenticated)
 
-// Create a new story
-router.post("/", is_authenticated, upload.single("image"), createStory)
+router.get("/", getStories)
+router.get("/user/:userId", getUserStories)
+router.get("/:id", getStoryById)
 
-// Get all stories (feed)
-router.get("/", is_authenticated, getStories)
+router.post("/", upload.single("image"), createStory)
+router.post("/:id/view", addStoryViewer)
 
-// Get user's own stories
-router.get("/user/:userId", is_authenticated, getUserStories)
-
-// Get specific story by ID
-router.get("/:id", is_authenticated, getStoryById)
-
-// Add viewer to story
-router.post("/:id/view", is_authenticated, addStoryViewer)
-
-// Delete story
-router.delete("/:id", is_authenticated, deleteStory)
+router.delete("/:id", deleteStory)
 
 export default router

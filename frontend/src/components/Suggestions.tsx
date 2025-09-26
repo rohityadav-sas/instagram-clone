@@ -5,6 +5,13 @@ import { CheckCircle } from "lucide-react"
 import { useUserStore } from "@/store/store"
 import { useSuggestedUsers } from "@/hooks/useSuggestedUsers"
 import SuggestedAccountItem from "./ui/suggested-account-item"
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog"
+import { LoginForm } from "./LoginForm"
 
 const CurrentUser = () => {
 	let logged_user = useUserStore((state) => state)
@@ -36,9 +43,15 @@ const CurrentUser = () => {
 					{logged_user.email}
 				</div>
 			</div>
-			<button className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
-				Switch
-			</button>
+			<Dialog>
+				<DialogTrigger className="text-xs cursor-pointer font-semibold text-blue-500 hover:text-blue-600 transition-colors">
+					Switch
+				</DialogTrigger>
+				<DialogContent className="sm:max-w-lg md:max-w-xl lg:max-w-4xl p-0 rounded-xl">
+					<DialogTitle className="sr-only">Switch</DialogTitle>
+					<LoginForm />
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

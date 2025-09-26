@@ -59,12 +59,11 @@ const CreatePostDialog = () => {
 				})
 
 				if (response.data.success) {
-					toast.success("Post created successfully!")
 					setCaption("")
 					setImage(null)
 					setPreview("")
 					setIsOpen(false)
-					queryClient.invalidateQueries({ queryKey: ["profile-posts"] })
+					queryClient.refetchQueries({ queryKey: ["profile-posts"] })
 				}
 			} catch (error) {
 				toast.error("Failed to create post")

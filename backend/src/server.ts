@@ -8,8 +8,8 @@ import post_routes from "./routes/post.route.js"
 import comment_routes from "./routes/comment.route.js"
 import message_routes from "./routes/message.route.js"
 import story_routes from "./routes/story.route.js"
-
-const app = express()
+import notification_routes from "./routes/notification.route.js"
+import { app, httpServer } from "./socket/socket.js"
 
 app.use(
 	cors({
@@ -27,12 +27,13 @@ app.use("/api/posts", post_routes)
 app.use("/api/comments", comment_routes)
 app.use("/api/messages", message_routes)
 app.use("/api/stories", story_routes)
+app.use("/api/notiifications", notification_routes)
 
 app.get("/api", (_, res: Response) => {
 	res.json({ message: "Hello from backend!" })
 })
 
-app.listen(ENV.PORT, () =>
+httpServer.listen(ENV.PORT, () =>
 	connect_db().then(() =>
 		console.log(`Backend running on http://localhost:${ENV.PORT}`)
 	)

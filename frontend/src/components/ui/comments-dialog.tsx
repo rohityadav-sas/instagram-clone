@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Heart, MessageSquare, MoreHorizontal, X } from "lucide-react"
+import { useState } from "react"
+import { Heart, MessageSquare, MoreHorizontal } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import {
@@ -19,7 +19,6 @@ import { DialogClose } from "@radix-ui/react-dialog"
 import axios_instance from "@/config/axios"
 import toast from "react-hot-toast"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useParams } from "next/navigation"
 
 interface CommentsDialogProps {
 	postData: Post

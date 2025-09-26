@@ -29,7 +29,6 @@ export const useUserFollowers = (
 			return response.data.data
 		},
 		enabled: enabled && !!username,
-		staleTime: 1000 * 60 * 5, // 5 minutes
 	})
 }
 
@@ -48,7 +47,6 @@ export const useUserFollowing = (
 			return response.data.data
 		},
 		enabled: enabled && !!username,
-		staleTime: 1000 * 60 * 5, // 5 minutes,
 	})
 }
 
@@ -64,6 +62,5 @@ export const usePostLikes = (postId: string | undefined, enabled = true) => {
 			return response.data.data
 		},
 		enabled: enabled && !!postId,
-		staleTime: 1000 * 60 * 2, // 2 minutes
 	})
 }

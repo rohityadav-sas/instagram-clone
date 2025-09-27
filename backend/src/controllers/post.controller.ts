@@ -79,7 +79,6 @@ export const toggle_like_post = async (req: Request, res: Response) => {
 			return
 		}
 		const has_liked = post.likes.includes(current_user._id)
-		let notification
 		if (has_liked) {
 			await Post.updateOne(
 				{ _id: post._id },
@@ -99,7 +98,7 @@ export const toggle_like_post = async (req: Request, res: Response) => {
 				{ $addToSet: { likes: current_user._id } }
 			)
 			if (post.author.toString() !== current_user._id.toString()) {
-				notification = await Notification.create({
+				await Notification.create({
 					to: post.author,
 					from: current_user._id,
 					type: "like",

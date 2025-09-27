@@ -4,7 +4,6 @@ import {
 	getNotifications,
 	markAsRead,
 	markAllAsRead,
-	deleteNotification,
 	getUnreadCount,
 } from "../controllers/notification.controller.js"
 
@@ -17,5 +16,4 @@ router.get("/unread-count", getUnreadCount)
 router.post("/:id/read", markAsRead)
 router.post("/read-all", markAllAsRead)
 
-router.delete("/:id", deleteNotification)
 export default router

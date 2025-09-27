@@ -27,25 +27,21 @@ router.post("/register", register_user)
 router.post("/login", login_user)
 
 // Protected routes
-router.get("/me", is_authenticated, get_current_user)
+router.use(is_authenticated)
+router.get("/me", get_current_user)
 router.get("/logout", logout_user)
-router.get("/suggested", is_authenticated, get_suggested_users)
-router.get("/search", is_authenticated, search_users)
-router.get("/is-following/:identifier", is_authenticated, is_following)
-router.get("/:identifier", is_authenticated, get_profile)
-router.get("/:identifier/followers", is_authenticated, get_user_followers)
-router.get("/:identifier/following", is_authenticated, get_user_following)
+router.get("/suggested", get_suggested_users)
+router.get("/search", search_users)
+router.get("/is-following/:identifier", is_following)
+router.get("/:identifier", get_profile)
+router.get("/:identifier/followers", get_user_followers)
+router.get("/:identifier/following", get_user_following)
 
-router.post("/toggle-follow/:identifier", is_authenticated, toggle_follow_user)
-router.post("/block/:identifier", is_authenticated, block_user)
-router.post("/unblock/:identifier", is_authenticated, unblock_user)
-router.post(
-	"/profile/edit",
-	is_authenticated,
-	upload.single("profile_picture"),
-	edit_profile
-)
+router.post("/toggle-follow/:identifier", toggle_follow_user)
+router.post("/block/:identifier", block_user)
+router.post("/unblock/:identifier", unblock_user)
+router.post("/profile/edit", upload.single("profile_picture"), edit_profile)
 
-router.delete("/delete", is_authenticated, delete_account)
+router.delete("/delete", delete_account)
 
 export default router

@@ -5,6 +5,7 @@ import CommentInput from "./comment-input"
 import UsersListDialog from "./users-list-dialog"
 import CommentsDialog from "./comments-dialog"
 import { Post } from "@/types/post"
+import axios_instance from "@/config/axios"
 
 interface PostActionsProps {
 	isLiked: boolean

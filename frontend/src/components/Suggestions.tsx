@@ -84,9 +84,6 @@ const Suggestions = () => {
 						<span className="text-sm font-semibold text-gray-500">
 							Suggested for you
 						</span>
-						<button className="text-xs font-semibold text-gray-900 hover:text-gray-600 transition-colors">
-							See All
-						</button>
 					</div>
 
 					{/* Suggested accounts skeleton */}

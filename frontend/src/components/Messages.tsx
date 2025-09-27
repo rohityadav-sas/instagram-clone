@@ -1,234 +1,407 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { CheckCircle, MessageCircleCode, SendIcon } from "lucide-react"
+import { motion } from "framer-motion"
+import {
+	useOnlineUsersStore,
+	useSocketStore,
+	useUserStore,
+} from "@/store/store"
 import Image from "next/image"
-import { UserCircle2, Send } from "lucide-react"
-import { useOnlineUsersStore, useUserStore } from "@/store/store"
+import { Input } from "./ui/input"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import axios_instance from "@/config/axios"
+import toast from "react-hot-toast"
+import { Message } from "@/types/message"
+import ChatMessages from "@/components/ChatMessages"
+import { type lastMessage, type existingChat } from "@/types/conversation"
 
-// Mock users
-const mockUsers = [
-	{
-		_id: "user-1",
-		username: "john_doe",
-		profile_picture: "/default-avatar.svg",
-		isOnline: true,
-	},
-	{
-		_id: "user-2",
-		username: "emma_wilson",
-		profile_picture: "/default-avatar.svg",
-		isOnline: false,
-	},
-]
-
-// Mock chats (Chat docs)
-const mockChats = [
-	{
-		_id: "chat-1",
-		members: ["user-1", "user-2"],
-		last_message: "msg-2",
-		updatedAt: "2024-09-25T14:32:00Z",
-	},
-]
-
-// Mock messages (Message docs)
-const mockMessages = [
-	{
-		_id: "msg-1",
-		sender: "user-1",
-		chat: "chat-1",
-		message: "Hey! How was your trip?",
-		read_by: ["user-1"],
-		createdAt: "2024-09-25T14:30:00Z",
-	},
-	{
-		_id: "msg-2",
-		sender: "user-2",
-		chat: "chat-1",
-		message: "It was amazing! The sunset views were incredible 🌅",
-		read_by: ["user-1", "user-2"],
-		createdAt: "2024-09-25T14:32:00Z",
-	},
-]
+const TypingIndicator = () => {
+	return (
+		<div className="flex gap-1 items-center text-gray-500 text-sm px-6 py-2 h-10 w-20 ml-4 bg-gray-300 rounded-2xl rounded-bl-none mt-2 mb-2">
+			<motion.span
+				animate={{ y: [0, -3, 0] }}
+				transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+				className="size-2 bg-gray-400 rounded-full"
+			/>
+			<motion.span
+				animate={{ y: [0, -3, 0] }}
+				transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
+				className="size-2 bg-gray-400 rounded-full"
+			/>
+			<motion.span
+				animate={{ y: [0, -3, 0] }}
+				transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
+				className="size-2 bg-gray-400 rounded-full"
+			/>
+		</div>
+	)
+}
 
 const MessagesComponent = () => {
-	const [selectedChat, setSelectedChat] = useState(mockChats[0])
-	const [newMessage, setNewMessage] = useState("")
-
-	const currentUser = useUserStore((state) => state.username)
-
+	const socket = useSocketStore((state) => state.socket)
+	const currentUserId = useUserStore((state) => state._id)
+	const queryClient = useQueryClient()
 	const onlineUsers = useOnlineUsersStore((state) => state.onlineUsers)
-	const following = useOnlineUsersStore((state) => state.following)
-	const followers = useOnlineUsersStore((state) => state.followers)
+	const [newMessage, setNewMessage] = useState<string>("")
+	const [typing, setTyping] = useState<boolean>(false)
 
-	console.log("Online Users from store: ", onlineUsers)
-	console.log("Following: ", following)
-	console.log("Followers: ", followers)
+	const [selectedChat, setSelectedChat] = useState<existingChat | null>(null)
 
-	const conversations = mockChats.map((chat) => {
-		const otherUserId = chat.members.find((id) => id !== currentUser)!
-		const otherUser = mockUsers.find((u) => u._id === otherUserId)!
-		const lastMessage = mockMessages.find((m) => m._id === chat.last_message)
-
-		return {
-			...chat,
-			otherUser,
-			lastMessage,
-		}
+	const conversations = useQuery<lastMessage>({
+		queryKey: ["lastMessages"],
+		queryFn: async () => {
+			const { data } = await axios_instance.get("/messages/last")
+			if (!data.success) throw new Error(data.message)
+			return data.data
+		},
 	})
 
-	// Get messages for selected chat
-	const chatMessages = mockMessages
-		.filter((m) => m.chat === selectedChat._id)
-		.map((m) => ({
-			...m,
-			isOwnMessage: m.sender === currentUser,
-		}))
+	const messages = useQuery<Message[]>({
+		queryKey: ["chats", selectedChat?.members[0]._id],
+		queryFn: async () => {
+			const { data } = await axios_instance.get(
+				`/messages/${selectedChat?.members[0]._id}`
+			)
+			if (!data.success) return []
+			return data.data
+		},
+		enabled: !!selectedChat,
+	})
 
-	// Send new message
-	const sendMessage = () => {
-		if (newMessage.trim()) {
-			console.log("Sending message:", newMessage)
-			// Normally you'd push to DB + socket here
-			setNewMessage("")
+	useEffect(() => {
+		queryClient.refetchQueries({ queryKey: ["lastMessages"] })
+	}, [selectedChat, queryClient])
+
+	useEffect(() => {
+		if (!socket) return
+		socket.on("newMessage", (msg: Message) => {
+			if (msg.sender === selectedChat?.members[0]._id) {
+				queryClient.refetchQueries({
+					queryKey: ["chats", selectedChat?.members[0]._id],
+				})
+			}
+			queryClient.refetchQueries({ queryKey: ["lastMessages"] })
+			if (
+				selectedChat &&
+				msg.chat === selectedChat._id &&
+				!msg.read_by.includes(currentUserId)
+			) {
+				socket.emit(
+					"messagesRead",
+					{ chatId: selectedChat._id, messageIds: [msg._id] },
+					(response: { success: boolean }) => {
+						if (response.success) {
+							queryClient.refetchQueries({
+								queryKey: ["chats", selectedChat?.members[0]._id],
+							})
+						}
+					}
+				)
+			}
+		})
+
+		socket.on(
+			"messagesRead",
+			({ chatId }: { chatId: string; readerId: string }) => {
+				if (chatId === selectedChat?._id) {
+					queryClient.refetchQueries({
+						queryKey: ["chats", selectedChat?.members[0]._id],
+					})
+					queryClient.refetchQueries({ queryKey: ["lastMessages"] })
+				}
+			}
+		)
+		let typingTimeout: NodeJS.Timeout
+
+		socket.on("typing", ({ sender }: { sender: string }) => {
+			if (selectedChat?.members[0]._id === sender) {
+				setTyping(true)
+				clearTimeout(typingTimeout)
+				typingTimeout = setTimeout(() => {
+					setTyping(false)
+				}, 1500)
+			}
+		})
+		return () => {
+			socket.off("newMessage")
+			socket.off("messagesRead")
+			socket.off("typing")
+			clearTimeout(typingTimeout)
+		}
+	}, [socket, selectedChat, queryClient, currentUserId])
+
+	useEffect(() => {
+		if (!socket || !selectedChat || !messages.data) return
+
+		// Find messages not yet read by current user
+		const unreadMessageIds = messages.data
+			.filter((msg) => !msg.read_by.includes(currentUserId))
+			.map((msg) => msg._id)
+
+		if (unreadMessageIds.length === 0) return
+		// Emit to backend
+		socket.emit(
+			"messagesRead",
+			{ chatId: selectedChat._id, messageIds: unreadMessageIds },
+			(_response: { success: boolean }) => {}
+		)
+	}, [socket, selectedChat, messages.data, currentUserId, queryClient])
+
+	const sendMessage = async () => {
+		if (!newMessage.trim() || !selectedChat) return
+		queryClient.setQueryData<Message[]>(
+			["chats", selectedChat?.members[0]._id],
+			(old = []) => [
+				{
+					_id: `temp-${Date.now()}`,
+					sender: currentUserId,
+					message: newMessage.trim(),
+					createdAt: new Date().toISOString(),
+					read_by: [currentUserId],
+				},
+				...old,
+			]
+		)
+		const oldMessageCopy = newMessage
+		setNewMessage("")
+		try {
+			socket?.emit(
+				"sendMessage",
+				{
+					receiver: selectedChat?.members[0]._id,
+					content: newMessage.trim(),
+				},
+				(response: { success: boolean; message: string; data: any }) => {
+					if (!response.success) {
+						setNewMessage(oldMessageCopy)
+						queryClient.setQueryData<Message[]>(
+							["chats", selectedChat?.members[0]._id],
+							(old = []) =>
+								old.filter((msg) => msg._id !== `temp-${oldMessageCopy}`)
+						)
+						toast.error("Failed to send message on server side")
+					}
+				}
+			)
+		} catch (err) {
+			setNewMessage(oldMessageCopy)
+			queryClient.setQueryData<Message[]>(
+				["chats", selectedChat?.members[0]._id],
+				(old = []) => old.filter((msg) => msg._id !== `temp-${oldMessageCopy}`)
+			)
+			toast.error("Failed to send message on client side")
 		}
 	}
 
 	return (
-		<div className="flex-1 flex">
-			{/* Conversations List */}
-			<div className="w-80 border-r border-gray-200 flex flex-col">
-				{/* Header */}
-				<div className="p-4 border-b border-gray-200">
-					<h2 className="text-xl font-semibold">Chats</h2>
-				</div>
-
-				{/* Conversations */}
-				<div className="flex-1 overflow-y-auto">
-					{conversations.map((conv) => (
+		<div className="flex flex-1">
+			<div className="w-1/3 border-r overflow-y-auto">
+				<h1 className="border-b p-4 text-center text-2xl font-semibold">
+					Chats
+				</h1>
+				{conversations.data?.existingChats &&
+					conversations.data.existingChats.map((chat) => (
 						<div
-							key={conv._id}
-							onClick={() => setSelectedChat(conv)}
-							className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 ${
-								selectedChat._id === conv._id ? "bg-gray-100" : ""
-							}`}
+							key={chat._id}
+							className={`flex items-center p-4 border-b cursor-pointer hover:bg-gray-100
+		${selectedChat?._id === chat._id ? "bg-gray-100" : ""}
+		${chat.unreadCount > 0 && selectedChat?._id !== chat._id ? "bg-blue-50" : ""}`}
+							onClick={() => setSelectedChat(chat)}
 						>
-							{/* Avatar */}
-							<div className="relative">
-								{conv.otherUser.profile_picture ? (
-									<Image
-										src={conv.otherUser.profile_picture}
-										alt={conv.otherUser.username}
-										width={48}
-										height={48}
-										className="rounded-full object-cover"
-									/>
-								) : (
-									<UserCircle2 className="w-12 h-12 text-gray-400" />
-								)}
-								{conv.otherUser.isOnline && (
-									<div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+							<div className="flex mr-3 relative">
+								<Image
+									alt="Profile Picture"
+									src={chat.members[0].profile_picture}
+									width={35}
+									height={35}
+									style={{
+										borderRadius: "50%",
+										objectFit: "cover",
+										aspectRatio: "1/1",
+									}}
+								/>
+								{onlineUsers.includes(chat.members[0]._id) && (
+									<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
 								)}
 							</div>
-
-							{/* Info */}
-							<div className="flex-1 min-w-0">
-								<div className="flex items-center justify-between">
-									<p className="font-semibold text-sm truncate">
-										{conv.otherUser.username}
-									</p>
-									<span className="text-xs text-gray-500">2m</span>
+							<div className="flex flex-col w-full">
+								<div className="font-medium flex items-center gap-1">
+									<span>{chat.members[0].username}</span>
+									{chat.members[0].isVerified && (
+										<CheckCircle className="text-blue-500" size={12} />
+									)}
 								</div>
-								<div className="flex items-center justify-between">
-									<p
-										className={`text-sm truncate ${
-											conv.lastMessage
-												? "text-gray-900"
-												: "text-gray-500 italic"
-										}`}
-									>
-										{conv.lastMessage?.message || "No messages yet"}
-									</p>
+								<div className="flex text-sm justify-between">
+									<div className="text-gray-500">
+										{chat?.last_message?.message}
+									</div>
+								</div>
+							</div>
+							<div className="flex flex-col items-end gap-2">
+								{chat.unreadCount > 0 && (
+									<div className="bg-blue-500 size-5 text-white text-xs font-semibold rounded-full flex justify-center items-center">
+										{chat.unreadCount}
+									</div>
+								)}
+								<div className="text-gray-500 text-xs text-nowrap">
+									{new Date(chat.last_message?.createdAt).toLocaleTimeString(
+										[],
+										{
+											hour: "2-digit",
+											minute: "2-digit",
+										}
+									)}
 								</div>
 							</div>
 						</div>
 					))}
-				</div>
+				{conversations.data?.availableUsersForNewChat &&
+					conversations.data.availableUsersForNewChat.map((user) => (
+						<div
+							key={user._id}
+							className={`flex items-center p-4 border-b cursor-pointer hover:bg-gray-100
+								${selectedChat?.members[0]._id === user._id ? "bg-gray-100" : ""}`}
+							onClick={() =>
+								setSelectedChat({
+									_id: `temp-${user._id}`,
+									members: [
+										{
+											_id: user._id,
+											username: user.username,
+											profile_picture: user.profile_picture,
+											isVerified: user.isVerified,
+										},
+									],
+									last_message: {
+										_id: "",
+										message: "",
+										createdAt: "",
+									},
+									createdAt: "",
+									unreadCount: 0,
+								})
+							}
+						>
+							<div className="flex mr-3 relative">
+								<Image
+									alt="Profile Picture"
+									src={user.profile_picture}
+									width={35}
+									height={35}
+									style={{
+										borderRadius: "50%",
+										objectFit: "cover",
+										aspectRatio: "1/1",
+									}}
+								/>
+								{onlineUsers.includes(user._id) && (
+									<span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+								)}
+							</div>
+							<div className="flex flex-col">
+								<div className="font-medium flex items-center gap-1">
+									<span>{user.username}</span>
+									{user.isVerified && (
+										<CheckCircle className="text-blue-500" size={12} />
+									)}
+								</div>
+								<div className="text-gray-500 text-sm">
+									Start a conversation
+								</div>
+							</div>
+						</div>
+					))}
 			</div>
-
-			{/* Chat Area */}
-			<div className="flex-1 flex flex-col">
-				{/* Chat Header */}
-				<div className="p-4 border-b border-gray-200 flex items-center gap-3">
-					{(() => {
-						const otherUserId = selectedChat.members.find(
-							(id) => id !== currentUser
-						)!
-						const otherUser = mockUsers.find((u) => u._id === otherUserId)!
-						return (
-							<>
-								{otherUser.profile_picture ? (
-									<Image
-										src={otherUser.profile_picture}
-										alt={otherUser.username}
-										width={40}
-										height={40}
-										className="rounded-full object-cover"
-									/>
-								) : (
-									<UserCircle2 className="w-10 h-10 text-gray-400" />
-								)}
-								<div>
-									<p className="font-semibold">{otherUser.username}</p>
-									<p className="text-xs text-gray-500">
-										{otherUser.isOnline ? "Active now" : "Offline"}
-									</p>
+			<div className="flex-1">
+				{selectedChat ? (
+					<div className="flex flex-col h-full">
+						<div className="flex items-center h-20 px-4 border-b">
+							<div className="flex mr-3 relative items-center gap-2">
+								<Image
+									alt="Profile Picture"
+									src={selectedChat.members[0].profile_picture}
+									width={40}
+									height={40}
+									style={{
+										borderRadius: "50%",
+										objectFit: "cover",
+										aspectRatio: "1/1",
+									}}
+								/>
+								<div className="flex flex-col text-lg font-semibold">
+									<div
+										className="flex gap-1 items-center cursor-pointer hover:underline"
+										onClick={() => {
+											window.location.href = `/${selectedChat.members[0].username}`
+										}}
+									>
+										{selectedChat.members[0].username}
+										{selectedChat.members[0].isVerified && (
+											<CheckCircle className="text-blue-500" size={12} />
+										)}
+									</div>
+									<div className="font-normal text-gray-500 text-sm">
+										{onlineUsers.includes(selectedChat.members[0]._id)
+											? "Active now"
+											: "Offline"}
+									</div>
 								</div>
-							</>
-						)
-					})()}
-				</div>
-
-				{/* Messages */}
-				<div className="flex-1 overflow-y-auto p-4 space-y-4">
-					{chatMessages.map((message) => (
-						<div
-							key={message._id}
-							className={`flex ${
-								message.isOwnMessage ? "justify-end" : "justify-start"
-							}`}
-						>
-							<div
-								className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-									message.isOwnMessage
-										? "bg-blue-500 text-white"
-										: "bg-gray-200 text-gray-900"
-								}`}
-							>
-								<p className="text-sm">{message.message}</p>
 							</div>
 						</div>
-					))}
-				</div>
-
-				{/* Message Input */}
-				<div className="p-4 border-t border-gray-200">
-					<div className="flex items-center gap-3">
-						<input
-							type="text"
-							placeholder="Message..."
-							value={newMessage}
-							onChange={(e) => setNewMessage(e.target.value)}
-							onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-							className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						<ChatMessages
+							messages={{
+								data: messages.data,
+								isLoading: messages.isLoading,
+								isError: messages.isError,
+							}}
+							currentUserId={currentUserId}
 						/>
-						<button
-							onClick={sendMessage}
-							disabled={!newMessage.trim()}
-							className="text-blue-500 hover:text-blue-700 disabled:text-gray-300 transition-colors"
-						>
-							<Send className="w-5 h-5" />
-						</button>
+
+						{selectedChat &&
+							messages.data &&
+							messages.data.length > 0 &&
+							messages.data[0].sender === currentUserId && (
+								<span className="text-gray-500 text-sm text-right px-8 mt-[-2px]">
+									{(() => {
+										return messages.data[0].read_by.includes(
+											selectedChat.members[0]._id
+										)
+											? "✅ Seen"
+											: "👁️‍🗨️ Unseen"
+									})()}
+								</span>
+							)}
+
+						{typing && <TypingIndicator />}
+						<div className="h-20 border-t p-4 flex items-center gap-4">
+							<Input
+								placeholder="Type your message here..."
+								className="h-12"
+								value={newMessage}
+								onChange={(e) => {
+									setNewMessage(e.target.value)
+									socket?.emit("typing", {
+										receiver: selectedChat.members[0]._id,
+									})
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault()
+										sendMessage()
+									}
+								}}
+							/>
+							<motion.div whileTap={{ scale: 0.8 }}>
+								<SendIcon className="cursor-pointer" onClick={sendMessage} />
+							</motion.div>
+						</div>
 					</div>
-				</div>
+				) : (
+					<div className="flex flex-col items-center h-full justify-center text-gray-500 text-3xl gap-8">
+						<MessageCircleCode className="mb-2" size={100} />
+						Select a chat to start messaging
+					</div>
+				)}
 			</div>
 		</div>
 	)

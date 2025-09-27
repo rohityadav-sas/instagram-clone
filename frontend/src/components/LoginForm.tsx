@@ -43,7 +43,6 @@ export function LoginForm({
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
 			window.location.href = "/"
-
 			return message
 		}
 

@@ -4,6 +4,7 @@ import Post from "../models/post.model.js"
 import cloudinary from "../config/cloudinary.js"
 import { get_data_uri } from "../utils/data_uri.js"
 import Comment from "../models/comment.model.js"
+import Notification from "../models/notification.model.js"
 
 export const create_post = async (req: Request, res: Response) => {
 	try {
@@ -78,17 +79,33 @@ export const toggle_like_post = async (req: Request, res: Response) => {
 			return
 		}
 		const has_liked = post.likes.includes(current_user._id)
+		let notification
 		if (has_liked) {
 			await Post.updateOne(
 				{ _id: post._id },
 				{ $pull: { likes: current_user._id } }
 			)
+			await Notification.deleteOne({
+				to: post.author,
+				from: current_user._id,
+				type: "like",
+				post: post._id,
+			})
+
 			res.status(200).json({ message: "Post unliked", success: true })
 		} else {
 			await Post.updateOne(
 				{ _id: post._id },
 				{ $addToSet: { likes: current_user._id } }
 			)
+			if (post.author.toString() !== current_user._id.toString()) {
+				notification = await Notification.create({
+					to: post.author,
+					from: current_user._id,
+					type: "like",
+					post: post._id,
+				})
+			}
 			res.status(200).json({ message: "Post liked", success: true })
 		}
 	} catch (err) {

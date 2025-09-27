@@ -9,6 +9,7 @@ import mongoose from "mongoose"
 import Post from "../models/post.model.js"
 import Comment from "../models/comment.model.js"
 import Story from "../models/story.model.js"
+import Notification from "../models/notification.model.js"
 
 export const register_user = async (req: Request, res: Response) => {
 	try {
@@ -395,6 +396,11 @@ export const toggle_follow_user = async (req: Request, res: Response) => {
 				{ _id: target_user._id },
 				{ $pull: { followers: current_user._id } }
 			)
+			await Notification.deleteOne({
+				type: "follow",
+				from: current_user._id,
+				to: target_user._id,
+			})
 			return void res
 				.status(200)
 				.json({ message: "User unfollowed successfully", success: true })
@@ -407,6 +413,11 @@ export const toggle_follow_user = async (req: Request, res: Response) => {
 				{ _id: target_user._id },
 				{ $addToSet: { followers: current_user._id } }
 			)
+			await Notification.create({
+				type: "follow",
+				from: current_user._id,
+				to: target_user._id,
+			})
 			return void res
 				.status(200)
 				.json({ message: "User followed successfully", success: true })

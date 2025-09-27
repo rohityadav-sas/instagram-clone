@@ -1,5 +1,6 @@
 import { type Request, type Response } from "express"
 import Notification from "../models/notification.model.js"
+import User from "../models/user.model.js"
 
 export const getNotifications = async (req: Request, res: Response) => {
 	try {
@@ -9,6 +10,17 @@ export const getNotifications = async (req: Request, res: Response) => {
 			.populate("post", "image")
 			.sort({ createdAt: -1 })
 
+		await Promise.all(
+			notifications.map(async (notif) => {
+				notif.isFollowing = Boolean(
+					await User.exists({
+						_id: userId,
+						following: notif.from._id,
+					})
+				)
+			})
+		)
+
 		return res.status(200).json({ success: true, data: notifications })
 	} catch (err) {
 		console.error("Error fetching notifications", err)
@@ -17,7 +29,6 @@ export const getNotifications = async (req: Request, res: Response) => {
 			.json({ success: false, message: "Internal Server Error" })
 	}
 }
-
 export const markAsRead = async (req: Request, res: Response) => {
 	try {
 		const userId = req.id
@@ -53,29 +64,6 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 			.json({ success: true, message: "All notifications marked as read" })
 	} catch (err) {
 		console.error("Error marking all notifications as read", err)
-		return res
-			.status(500)
-			.json({ success: false, message: "Internal Server Error" })
-	}
-}
-
-export const deleteNotification = async (req: Request, res: Response) => {
-	try {
-		const notif = await Notification.findOneAndDelete({
-			_id: req.params.id,
-			to: req.id,
-		})
-
-		if (!notif)
-			return res
-				.status(404)
-				.json({ success: false, message: "Notification not found" })
-
-		return res
-			.status(200)
-			.json({ success: true, message: "Notification deleted" })
-	} catch (err) {
-		console.error("Error deleting notification", err)
 		return res
 			.status(500)
 			.json({ success: false, message: "Internal Server Error" })

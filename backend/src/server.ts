@@ -9,7 +9,12 @@ import comment_routes from "./routes/comment.route.js"
 import message_routes from "./routes/message.route.js"
 import story_routes from "./routes/story.route.js"
 import notification_routes from "./routes/notification.route.js"
-import { app, httpServer } from "./socket/socket.js"
+import { Server as IOServer } from "socket.io"
+import { createServer } from "http"
+import initSocket from "./socket/socket.js"
+
+const app = express()
+const httpServer = createServer(app)
 
 app.use(
 	cors({
@@ -27,14 +32,26 @@ app.use("/api/posts", post_routes)
 app.use("/api/comments", comment_routes)
 app.use("/api/messages", message_routes)
 app.use("/api/stories", story_routes)
-app.use("/api/notiifications", notification_routes)
+app.use("/api/notifications", notification_routes)
 
 app.get("/api", (_, res: Response) => {
 	res.json({ message: "Hello from backend!" })
 })
+
+const io = new IOServer(httpServer, {
+	cors: {
+		origin: ENV.FRONTEND_URL,
+		methods: ["GET", "POST"],
+		credentials: true,
+	},
+})
+
+initSocket(io)
 
 httpServer.listen(ENV.PORT, () =>
 	connect_db().then(() =>
 		console.log(`Backend running on http://localhost:${ENV.PORT}`)
 	)
 )
+
+export { io }

@@ -1,57 +1,63 @@
-import { useState } from "react"
-import { Heart, MessageCircle, UserCircle2 } from "lucide-react"
+"use client"
+import { useEffect, useState } from "react"
+import { Heart, Loader, MessageCircle, UserCircle2 } from "lucide-react"
 import Image from "next/image"
-
-// Temporary mock data until real API integration
-const mockNotifications = [
-	{
-		id: "notif-1",
-		type: "like",
-		user: {
-			username: "john_doe",
-			profile_picture: "/default-avatar.svg",
-		},
-		message: "liked your photo",
-		timestamp: "2m",
-		isRead: false,
-		post: {
-			image: "/login_banner.png",
-		},
-	},
-	{
-		id: "notif-2",
-		type: "follow",
-		user: {
-			username: "emma_wilson",
-			profile_picture: "/default-avatar.svg",
-		},
-		message: "started following you",
-		timestamp: "1h",
-		isRead: false,
-	},
-	{
-		id: "notif-3",
-		type: "comment",
-		user: {
-			username: "mike_chen",
-			profile_picture: "/default-avatar.svg",
-		},
-		message: 'commented on your photo: "Amazing shot! 📸"',
-		timestamp: "3h",
-		isRead: true,
-		post: {
-			image: "/login_banner.png",
-		},
-	},
-]
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import axios_instance from "@/config/axios"
+import { useSocketStore } from "@/store/store"
+import FollowButton from "./ui/FollowButton"
+import toast from "react-hot-toast"
 
 const NotificationsComponent = () => {
 	const [filter, setFilter] = useState<"all" | "unread">("all")
+	const queryclient = useQueryClient()
+	const socket = useSocketStore((state) => state.socket)
 
-	const filteredNotifications =
-		filter === "unread"
-			? mockNotifications.filter((notif) => !notif.isRead)
-			: mockNotifications
+	const {
+		data: notifications,
+		isLoading,
+		isError,
+	} = useQuery({
+		queryKey: ["notifications"],
+		queryFn: async () => {
+			const res = await axios_instance.get("/notifications/all")
+			return res.data.data || []
+		},
+	})
+
+	const markAllasRead = async () => {
+		try {
+			const { data } = await axios_instance.post("/notifications/read-all")
+			if (!data.success)
+				toast.error(data.message || "Failed to mark all as read")
+			queryclient.refetchQueries({
+				queryKey: ["notifications", "unread-count"],
+			})
+			queryclient.refetchQueries({ queryKey: ["notifications"] })
+		} catch (err) {
+			console.error("Error marking all as read:", err)
+			toast.error("Client error: Failed to mark all as read")
+		}
+	}
+
+	useEffect(() => {
+		if (!socket) return
+		socket.on("notification", (_notificationDetails, isFollowing) => {
+			queryclient.refetchQueries({
+				queryKey: ["notifications", "unread-count"],
+			})
+			queryclient.refetchQueries({ queryKey: ["notifications"] })
+		})
+	})
+
+	// Fetch unread count
+	const { data: unreadCount } = useQuery({
+		queryKey: ["notifications", "unread-count"],
+		queryFn: async () => {
+			const res = await axios_instance.get("/notifications/unread-count")
+			return res.data.count || 0
+		},
+	})
 
 	const getNotificationIcon = (type: string) => {
 		switch (type) {
@@ -66,51 +72,82 @@ const NotificationsComponent = () => {
 		}
 	}
 
+	if (isLoading) {
+		return (
+			<div className="flex-1 flex justify-center items-center">
+				<Loader className="size-12 animate-spin" />
+			</div>
+		)
+	}
+
+	if (isError) {
+		return (
+			<div className="flex items-center justify-center py-20 w-full h-full">
+				<p className="text-red-500">Failed to load notifications</p>
+			</div>
+		)
+	}
+
+	// Apply filter
+	const filteredNotifications =
+		filter === "unread"
+			? notifications?.filter((notif: any) => !notif.isRead)
+			: notifications
+
 	return (
 		<div className="flex-1 overflow-y-auto">
 			<div className="max-w-lg mx-auto">
 				<div className="p-4 border-b border-gray-200">
 					<h2 className="text-xl font-semibold mb-4">Notifications</h2>
 
-					<div className="flex gap-4">
+					<div className="flex justify-between">
+						<div className="flex gap-4">
+							<button
+								onClick={() => setFilter("all")}
+								className={`text-sm font-medium cursor-pointer ${
+									filter === "all"
+										? "text-gray-900 border-b-2 border-gray-900"
+										: "text-gray-500"
+								} pb-2`}
+							>
+								All
+							</button>
+							<button
+								onClick={() => setFilter("unread")}
+								className={`text-sm font-medium cursor-pointer ${
+									filter === "unread"
+										? "text-gray-900 border-b-2 border-gray-900"
+										: "text-gray-500"
+								} pb-2`}
+							>
+								Unread ({unreadCount ?? 0})
+							</button>
+						</div>
 						<button
-							onClick={() => setFilter("all")}
-							className={`text-sm font-medium cursor-pointer ${
-								filter === "all"
-									? "text-gray-900 border-b-2 border-gray-900"
-									: "text-gray-500"
-							} pb-2`}
+							className="text-sm font-medium cursor-pointer text-gray-500 pb-2 hover:text-gray-700"
+							onClick={markAllasRead}
 						>
-							All
-						</button>
-						<button
-							onClick={() => setFilter("unread")}
-							className={`text-sm font-medium cursor-pointer ${
-								filter === "unread"
-									? "text-gray-900 border-b-2 border-gray-900"
-									: "text-gray-500"
-							} pb-2`}
-						>
-							Unread ({mockNotifications.filter((n) => !n.isRead).length})
+							Mark all as read
 						</button>
 					</div>
 				</div>
 
 				<div className="divide-y divide-gray-200">
-					{filteredNotifications.length > 0 ? (
-						filteredNotifications.map((notification) => (
+					{filteredNotifications && filteredNotifications.length > 0 ? (
+						filteredNotifications.map((notification: any) => (
 							<div
-								key={notification.id}
+								key={notification._id}
 								className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 ${
 									!notification.isRead ? "bg-blue-50" : ""
 								}`}
 							>
+								{/* User Avatar + Icon */}
 								<div className="relative">
 									<Image
 										src={
-											notification.user.profile_picture ?? "/default-avatar.svg"
+											notification.from.profile_picture ?? "/default-avatar.svg"
 										}
-										alt={notification.user.username}
+										alt={notification.from.username}
 										width={56}
 										height={56}
 										style={{
@@ -124,19 +161,24 @@ const NotificationsComponent = () => {
 									</div>
 								</div>
 
+								{/* Text */}
 								<div className="flex-1 min-w-0">
 									<p className="text-sm">
 										<span className="font-semibold">
-											{notification.user.username}
+											{notification.from.username}
 										</span>{" "}
-										{notification.message}
+										{notification.type === "like" && "liked your photo"}
+										{notification.type === "comment" &&
+											`commented: "${notification.comment ?? ""}"`}
+										{notification.type === "follow" && "started following you"}
 									</p>
 									<p className="text-xs text-gray-500 mt-1">
-										{notification.timestamp}
+										{new Date(notification.createdAt).toLocaleString()}
 									</p>
 								</div>
 
-								{notification.post && (
+								{/* Post Thumbnail (if applicable) */}
+								{notification.post?.image && (
 									<div className="flex-shrink-0">
 										<Image
 											src={notification.post.image}
@@ -152,12 +194,15 @@ const NotificationsComponent = () => {
 									</div>
 								)}
 
+								{/* Follow button */}
 								{notification.type === "follow" && (
-									<button className="px-4 py-1 text-xs font-semibold text-blue-500 border border-blue-500 rounded hover:bg-blue-50 transition-colors">
-										Follow
-									</button>
+									<FollowButton
+										username={notification.from.username}
+										initialIsFollowing={notification.isFollowing}
+									/>
 								)}
 
+								{/* Blue dot for unread */}
 								{!notification.isRead && (
 									<div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
 								)}

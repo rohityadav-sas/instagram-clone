@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import { type User } from "@/types/user"
+import { Socket } from "socket.io-client"
 
 const useUserStore = create<User>()(
 	persist(
@@ -44,17 +45,39 @@ const useUserStore = create<User>()(
 const useOnlineUsersStore = create<{
 	onlineUsers: string[]
 	setOnlineUsers: (users: string[]) => void
-	following: string[]
-	setFollowing: (users: string[]) => void
-	followers: string[]
-	setFollowers: (users: string[]) => void
 }>((set) => ({
 	onlineUsers: [],
-	following: [],
-	followers: [],
 	setOnlineUsers: (users) => set({ onlineUsers: users }),
-	setFollowing: (users) => set({ following: users }),
-	setFollowers: (users) => set({ followers: users }),
 }))
 
-export { useUserStore, useOnlineUsersStore }
+type UnreadState = {
+	counts: Record<string, number>
+	setCount: (chatId: string, count: number) => void
+	increment: (chatId: string) => void
+	clear: (chatId: string) => void
+}
+
+const useUnreadStore = create<UnreadState>((set) => ({
+	counts: {},
+	setCount: (chatId, count) =>
+		set((state) => ({ counts: { ...state.counts, [chatId]: count } })),
+	increment: (chatId) =>
+		set((state) => ({
+			counts: { ...state.counts, [chatId]: (state.counts[chatId] || 0) + 1 },
+		})),
+	clear: (chatId) =>
+		set((state) => {
+			const updated = { ...state.counts, [chatId]: 0 }
+			return { counts: updated }
+		}),
+}))
+
+const useSocketStore = create<{
+	socket: Socket | null
+	setSocket: (socket: Socket | null) => void
+}>((set) => ({
+	socket: null,
+	setSocket: (socket) => set({ socket }),
+}))
+
+export { useUserStore, useOnlineUsersStore, useUnreadStore, useSocketStore }

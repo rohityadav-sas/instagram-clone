@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast"
 import "./globals.css"
 import TanstackProvider from "@/app/TanstackProvider"
 import LoadingBar from "@/components/ui/loading-bar"
+import SocketInitializer from "./socketProvider"
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -33,24 +34,26 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<LoadingBar />
-				<TanstackProvider>{children}</TanstackProvider>
-				<Toaster
-					toastOptions={{
-						success: {
-							iconTheme: {
-								primary: "#3f3f46",
-								secondary: "#fafafa",
+				<SocketInitializer>
+					<LoadingBar />
+					<TanstackProvider>{children}</TanstackProvider>
+					<Toaster
+						toastOptions={{
+							success: {
+								iconTheme: {
+									primary: "#3f3f46",
+									secondary: "#fafafa",
+								},
 							},
-						},
-						error: {
-							iconTheme: {
-								primary: "#3f3f46",
-								secondary: "#fafafa",
+							error: {
+								iconTheme: {
+									primary: "#3f3f46",
+									secondary: "#fafafa",
+								},
 							},
-						},
-					}}
-				/>
+						}}
+					/>
+				</SocketInitializer>
 			</body>
 		</html>
 	)

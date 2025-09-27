@@ -2,6 +2,7 @@ import { type Request, type Response } from "express"
 import User from "../models/user.model.js"
 import Post from "../models/post.model.js"
 import Comment from "../models/comment.model.js"
+import Notification from "../models/notification.model.js"
 
 export const create_comment = async (req: Request, res: Response) => {
 	try {
@@ -28,6 +29,13 @@ export const create_comment = async (req: Request, res: Response) => {
 		;(
 			await comment.populate("author", "username profile_picture isVerified")
 		).populate("likes", "username profile_picture isVerified")
+		await Notification.create({
+			type: "comment",
+			from: current_user._id,
+			to: post.author,
+			post: post._id,
+			comment: text.trim(),
+		})
 		res
 			.status(201)
 			.json({ message: "Comment created", success: true, data: comment })
@@ -60,41 +68,6 @@ export const delete_comment = async (req: Request, res: Response) => {
 		res.status(200).json({ message: "Comment deleted", success: true })
 	} catch (err) {
 		console.error("Error deleting comment", err)
-		res.status(500).json({ message: "Internal server error", success: false })
-	}
-}
-
-export const toggle_like_comment = async (req: Request, res: Response) => {
-	try {
-		const current_user = await User.findById(req.id)
-		if (!current_user) {
-			res.status(401).json({ message: "Unauthorized", success: false })
-			return
-		}
-		const comment = await Comment.findById(req.params.comment_id)
-		if (!comment) {
-			res.status(404).json({
-				message: "Comment does not exist or has been deleted",
-				success: false,
-			})
-			return
-		}
-		const has_liked = comment.likes.includes(current_user._id)
-		if (has_liked) {
-			await Comment.updateOne(
-				{ _id: comment._id },
-				{ $pull: { likes: current_user._id } }
-			)
-			res.status(200).json({ message: "Comment unliked", success: true })
-		} else {
-			await Comment.updateOne(
-				{ _id: comment._id },
-				{ $addToSet: { likes: current_user._id } }
-			)
-			res.status(200).json({ message: "Comment liked", success: true })
-		}
-	} catch (err) {
-		console.error("Error toggling like on comment", err)
 		res.status(500).json({ message: "Internal server error", success: false })
 	}
 }

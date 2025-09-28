@@ -37,8 +37,7 @@ interface NavigationItem {
 
 const createNavigationItems = (
 	profilePicture: string | null,
-	handleItemChange: (item: SidebarItemType) => void,
-	currentUsername: string
+	handleItemChange: (item: SidebarItemType) => void
 ): NavigationItem[] => [
 	{
 		icon: <Home />,
@@ -177,15 +176,14 @@ const Sidebar = () => {
 
 	const navigationItems = createNavigationItems(
 		profilePicture,
-		handleSidebarItemClick,
-		currentUsername
+		handleSidebarItemClick
 	)
 
 	return (
 		<aside className="border-r border-gray-200 h-screen w-64 p-4 py-8 pb-6 flex flex-col bg-gray-50">
 			<InstagramLogo />
 
-			<nav className="flex flex-col gap-1 flex-1">
+			<nav className="flex flex-col gap-2 flex-1">
 				{navigationItems.map((item) => (
 					<div key={item.label}>
 						{item.label === "Create" ? (

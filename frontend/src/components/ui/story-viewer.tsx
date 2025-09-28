@@ -30,7 +30,6 @@ const StoryViewer = ({
 	const [isPaused, setIsPaused] = useState(false)
 	const [progress, setProgress] = useState(0)
 	const [showControls, setShowControls] = useState(true)
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 	const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
 	const viewedStoriesRef = useRef<Set<string>>(new Set())
 	const currentUsername = useUserStore((state) => state.username)

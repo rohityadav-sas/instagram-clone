@@ -28,7 +28,7 @@ const ChatMessages = ({ messages, currentUserId }: Props) => {
 	}
 
 	return (
-		<div className="flex-1 flex flex-col-reverse overflow-y-auto p-4 pb-0 gap-2">
+		<div className="flex-1 flex flex-col-reverse overflow-y-auto p-4 pb-0 gap-2 mb-3">
 			{messages.data && messages.data?.length > 0 ? (
 				messages.data.map((msg) => {
 					const isOwn = msg.sender === currentUserId

@@ -13,6 +13,14 @@ const NotificationsComponent = () => {
 	const queryclient = useQueryClient()
 	const socket = useSocketStore((state) => state.socket)
 
+	const { data: unreadCount } = useQuery({
+		queryKey: ["notifications", "unread-count"],
+		queryFn: async () => {
+			const res = await axios_instance.get("/notifications/unread-count")
+			return res.data.count || 0
+		},
+	})
+
 	const {
 		data: notifications,
 		isLoading,
@@ -42,7 +50,7 @@ const NotificationsComponent = () => {
 
 	useEffect(() => {
 		if (!socket) return
-		socket.on("notification", (_notificationDetails, isFollowing) => {
+		socket.on("notification", (_notificationDetails, _isFollowing) => {
 			queryclient.refetchQueries({
 				queryKey: ["notifications", "unread-count"],
 			})
@@ -51,13 +59,6 @@ const NotificationsComponent = () => {
 	})
 
 	// Fetch unread count
-	const { data: unreadCount } = useQuery({
-		queryKey: ["notifications", "unread-count"],
-		queryFn: async () => {
-			const res = await axios_instance.get("/notifications/unread-count")
-			return res.data.count || 0
-		},
-	})
 
 	const getNotificationIcon = (type: string) => {
 		switch (type) {
@@ -145,7 +146,7 @@ const NotificationsComponent = () => {
 								<div className="relative">
 									<Image
 										src={
-											notification.from.profile_picture ?? "/default-avatar.svg"
+											notification.from.profile_picture || "/default-avatar.svg"
 										}
 										alt={notification.from.username}
 										width={56}
@@ -164,7 +165,12 @@ const NotificationsComponent = () => {
 								{/* Text */}
 								<div className="flex-1 min-w-0">
 									<p className="text-sm">
-										<span className="font-semibold">
+										<span
+											className="font-semibold"
+											onClick={() => {
+												window.location.href = `/${notification.from.username}`
+											}}
+										>
 											{notification.from.username}
 										</span>{" "}
 										{notification.type === "like" && "liked your photo"}

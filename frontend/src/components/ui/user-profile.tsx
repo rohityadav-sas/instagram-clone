@@ -1,6 +1,5 @@
 import { CheckCircle } from "lucide-react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 
 interface UserProfileProps {
 	username: string
@@ -23,7 +22,6 @@ const UserProfile = ({
 	text = "",
 	textCreatedAt,
 }: UserProfileProps) => {
-	const router = useRouter()
 	const calculateTimeAgo = (dateString: string) => {
 		const date = new Date(dateString)
 		const now = new Date()

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { CheckCircle, MessageCircleCode, SendIcon } from "lucide-react"
 import { motion } from "framer-motion"
 import {
+	useLastMessagesStore,
 	useOnlineUsersStore,
 	useSocketStore,
 	useUserStore,
@@ -46,15 +47,7 @@ const MessagesComponent = () => {
 	const [typing, setTyping] = useState<boolean>(false)
 
 	const [selectedChat, setSelectedChat] = useState<existingChat | null>(null)
-
-	const conversations = useQuery<lastMessage>({
-		queryKey: ["lastMessages"],
-		queryFn: async () => {
-			const { data } = await axios_instance.get("/messages/last")
-			if (!data.success) throw new Error(data.message)
-			return data.data
-		},
-	})
+	const conversations = useLastMessagesStore((state) => state.lastMessages)
 
 	const messages = useQuery<Message[]>({
 		queryKey: ["chats", selectedChat?.members[0]._id],
@@ -199,8 +192,8 @@ const MessagesComponent = () => {
 				<h1 className="border-b p-4 text-center text-2xl font-semibold">
 					Chats
 				</h1>
-				{conversations.data?.existingChats &&
-					conversations.data.existingChats.map((chat) => (
+				{conversations.existingChats &&
+					conversations.existingChats.map((chat) => (
 						<div
 							key={chat._id}
 							className={`flex items-center p-4 border-b cursor-pointer hover:bg-gray-100
@@ -211,9 +204,9 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative">
 								<Image
 									alt="Profile Picture"
-									src={chat.members[0].profile_picture}
-									width={35}
-									height={35}
+									src={chat.members[0].profile_picture || "/default-avatar.svg"}
+									width={50}
+									height={50}
 									style={{
 										borderRadius: "50%",
 										objectFit: "cover",
@@ -255,8 +248,8 @@ const MessagesComponent = () => {
 							</div>
 						</div>
 					))}
-				{conversations.data?.availableUsersForNewChat &&
-					conversations.data.availableUsersForNewChat.map((user) => (
+				{conversations.availableUsersForNewChat &&
+					conversations.availableUsersForNewChat.map((user) => (
 						<div
 							key={user._id}
 							className={`flex items-center p-4 border-b cursor-pointer hover:bg-gray-100
@@ -285,7 +278,7 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative">
 								<Image
 									alt="Profile Picture"
-									src={user.profile_picture}
+									src={user.profile_picture || "/default-avatar.svg"}
 									width={35}
 									height={35}
 									style={{
@@ -319,7 +312,10 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative items-center gap-2">
 								<Image
 									alt="Profile Picture"
-									src={selectedChat.members[0].profile_picture}
+									src={
+										selectedChat.members[0].profile_picture ||
+										"/default-avatar.svg"
+									}
 									width={40}
 									height={40}
 									style={{

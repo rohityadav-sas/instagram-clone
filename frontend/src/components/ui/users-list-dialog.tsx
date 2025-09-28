@@ -19,7 +19,7 @@ import {
 import { useFollowUser } from "@/hooks/useFollowUser"
 import { useUserStore } from "@/store/store"
 import { User } from "@/types/user"
-import { QueryClient, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface UsersListDialogProps {
 	children: React.ReactNode

@@ -9,7 +9,6 @@ interface CommentInputProps {
 
 const CommentInput = ({
 	className = "flex items-center gap-3 w-full",
-	postId,
 	addComment,
 	ref,
 }: CommentInputProps) => {

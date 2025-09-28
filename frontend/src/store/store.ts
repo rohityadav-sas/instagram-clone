@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import { type User } from "@/types/user"
 import { Socket } from "socket.io-client"
+import { lastMessage } from "@/types/conversation"
 
 const useUserStore = create<User>()(
 	persist(
@@ -80,4 +81,18 @@ const useSocketStore = create<{
 	setSocket: (socket) => set({ socket }),
 }))
 
-export { useUserStore, useOnlineUsersStore, useUnreadStore, useSocketStore }
+const useLastMessagesStore = create<{
+	lastMessages: lastMessage
+	setLastMessage: (lastMessage: lastMessage) => void
+}>((set) => ({
+	lastMessages: { existingChats: [], availableUsersForNewChat: [] },
+	setLastMessage: (lastMessage) => set({ lastMessages: { ...lastMessage } }),
+}))
+
+export {
+	useUserStore,
+	useOnlineUsersStore,
+	useUnreadStore,
+	useSocketStore,
+	useLastMessagesStore,
+}

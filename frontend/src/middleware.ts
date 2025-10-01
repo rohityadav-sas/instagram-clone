@@ -3,18 +3,12 @@ import type { NextRequest } from "next/server"
 import { authClient } from "./auth/auth-client"
 
 export async function middleware(req: NextRequest) {
-	// grab headers directly from the request
-	const headersObj = Object.fromEntries(req.headers.entries())
-
-	const { data, error } = await authClient.getSession({
-		fetchOptions: {
-			headers: headersObj,
-		},
-	})
-
+	const { data, error } = await authClient.getSession()
 	if (error) {
 		console.error("Error fetching session:", error)
-		throw new Error("Failed to fetch session")
+		const url = req.nextUrl.clone()
+		url.pathname = "/login"
+		return NextResponse.rewrite(url)
 	}
 
 	if (!data?.session) {

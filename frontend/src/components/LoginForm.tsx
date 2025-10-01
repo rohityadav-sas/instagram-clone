@@ -9,9 +9,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import Image from "next/image"
 import toast from "react-hot-toast"
-import { useUserStore } from "@/store/store"
 import { authClient } from "@/auth/auth-client"
-import axios_instance from "@/config/axios"
 
 interface LoginFormData {
 	password: string
@@ -24,7 +22,6 @@ export function LoginForm({
 	...props
 }: React.ComponentProps<"div">) {
 	const [loading, setLoading] = useState(false)
-	const setUser = useUserStore((state) => state.setUser)
 	const [selectedEmail, setSelectedEmail] = useState<boolean>(true)
 	const LoginWithGitHub = async () => {
 		await authClient.signIn.social({
@@ -78,7 +75,7 @@ export function LoginForm({
 				response = await authClient.signIn.email({
 					email: email,
 					password: password,
-					// callbackURL: "/",
+					callbackURL: "/",
 				})
 			} else if (username) {
 				response = await authClient.signIn.username({
@@ -92,9 +89,7 @@ export function LoginForm({
 					throw new Error("Please verify your email address")
 				throw new Error(response.error.message)
 			}
-			console.log(response)
-			const user_response = await axios_instance.get("/users/me")
-			setUser(user_response.data.data)
+
 			return "Logged in successfully!"
 		}
 

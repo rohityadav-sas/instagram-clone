@@ -81,13 +81,11 @@ export function LoginForm({
 				response = await authClient.signIn.email({
 					email: email,
 					password: password,
-					callbackURL: "/",
 				})
 			} else if (username) {
 				response = await authClient.signIn.username({
 					username: username,
 					password: password,
-					callbackURL: "/",
 				})
 			}
 			if (response?.error) {

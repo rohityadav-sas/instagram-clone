@@ -415,14 +415,6 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	advanced: {
-		defaultCookieAttributes: {
-			httpOnly: true,
-			sameSite: "none",
-			secure: true,
-		},
-		useSecureCookies: true,
-	},
 })
 
 export type Session = typeof auth.$Infer.Session

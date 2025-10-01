@@ -5,9 +5,10 @@
 	"main": "dist/server.js",
 	"type": "module",
 	"scripts": {
-		"build": "tsc --watch",
-		"dev": "nodemon dist/server.js",
-		"start": "tsc && node dist/server.js"
+		"dev:build": "tsc --watch",
+		"dev:start": "nodemon dist/server.js",
+		"build": "tsc",
+		"start": "node dist/server.js"
 	},
 	"keywords": [],
 	"author": "",

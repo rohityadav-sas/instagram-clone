@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { authClient } from "./auth/auth-client"
 
 export async function middleware(req: NextRequest) {
-	const { data, error } = await authClient.getSession()
-	if (error) {
-		console.error("Error fetching session:", error)
-		const url = req.nextUrl.clone()
-		url.pathname = "/login"
-		return NextResponse.rewrite(url)
-	}
+	// Check for authentication token in cookies
+	const token = req.cookies.get("better-auth.session_token")
 
-	if (!data?.session) {
+	// If no token, redirect to login
+	if (!token) {
 		const url = req.nextUrl.clone()
 		url.pathname = "/login"
-		return NextResponse.rewrite(url)
+		return NextResponse.redirect(url)
 	}
 
 	return NextResponse.next()

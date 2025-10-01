@@ -27,8 +27,8 @@ export const create_comment = async (req: Request, res: Response) => {
 			text: text.trim(),
 		})
 		;(
-			await comment.populate("author", "username profile_picture isVerified")
-		).populate("likes", "username profile_picture isVerified")
+			await comment.populate("author", "username image emailVerified")
+		).populate("likes", "username image emailVerified")
 		await Notification.create({
 			type: "comment",
 			from: current_user._id,
@@ -90,10 +90,10 @@ export const get_comments = async (req: Request, res: Response) => {
 		})
 			.populate({
 				path: "author",
-				select: "username profile_picture isVerified blocked_users",
+				select: "username image emailVerified blocked_users",
 				match: { blocked_users: { $ne: current_user._id } },
 			})
-			.populate("likes", "username profile_picture isVerified")
+			.populate("likes", "username image emailVerified")
 
 		// Filter out comments where author is null (blocked the current user)
 		const filteredComments = comments.filter(

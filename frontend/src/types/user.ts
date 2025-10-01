@@ -2,13 +2,14 @@ import { type Post } from "./post"
 
 export type User = {
 	_id: string
+	name: string
 	username: string
 	email: string
 	full_name?: string
-	profile_picture: string
+	image: string | null | undefined
 	bio: string
 	gender: string
-	isVerified?: boolean
+	emailVerified?: boolean
 	isFollowing?: boolean
 	followersCount: number
 	followingCount: number

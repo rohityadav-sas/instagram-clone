@@ -18,7 +18,7 @@ const SuggestedAccountItem = ({ account }: SuggestedAccountItemProps) => {
 			{/* Avatar */}
 			<button className="relative flex-shrink-0 cursor-pointer">
 				<Image
-					src={account.profile_picture || "/default-avatar.svg"}
+					src={account.image || "/default-avatar.svg"}
 					alt={`${account.username}'s avatar`}
 					width={50}
 					height={50}
@@ -42,7 +42,7 @@ const SuggestedAccountItem = ({ account }: SuggestedAccountItemProps) => {
 						>
 							{account.username}
 						</span>
-						{account.isVerified && (
+						{account.emailVerified && (
 							<CheckCircle className="w-3 h-3 text-blue-500 flex-shrink-0" />
 						)}
 					</div>

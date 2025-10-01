@@ -12,12 +12,12 @@ import {
 	Search,
 } from "lucide-react"
 import Image from "next/image"
-import axios_instance from "@/config/axios"
 import { useUserStore } from "@/store/store"
 import InstagramLogo from "@/components/ui/instagram-logo"
 import SidebarItem from "@/components/ui/sidebar-item"
 import CreatePostDialog from "@/components/ui/create-post-dialog"
 import { useLoadingStore } from "@/components/ui/loading-bar"
+import { authClient } from "@/auth/auth-client"
 
 export type SidebarItemType =
 	| "Home"
@@ -36,7 +36,7 @@ interface NavigationItem {
 }
 
 const createNavigationItems = (
-	profilePicture: string | null,
+	image: string | null | undefined,
 	handleItemChange: (item: SidebarItemType) => void
 ): NavigationItem[] => [
 	{
@@ -71,7 +71,7 @@ const createNavigationItems = (
 	{
 		icon: (
 			<Image
-				src={profilePicture ? profilePicture : "/default-avatar.svg"}
+				src={image || "/default-avatar.svg"}
 				alt="Profile"
 				height={24}
 				width={24}
@@ -91,9 +91,9 @@ const Sidebar = () => {
 	const router = useRouter()
 	const pathname = usePathname()
 	const { startLoading, stopLoading } = useLoadingStore()
-	const profilePicture = useUserStore((state) => state.profile_picture)
+	const image = useUserStore((state) => state.image)
 	const currentUsername = useUserStore((state) => state.username)
-
+	const clearUser = useUserStore((state) => state.clearUser)
 	const getActiveItem = (): SidebarItemType => {
 		if (pathname === "/") return "Home"
 		if (pathname === "/search") return "Search"
@@ -119,28 +119,17 @@ const Sidebar = () => {
 
 	const handleLogout = async () => {
 		const logOut = async () => {
-			try {
-				const response = await axios_instance.get("/users/logout")
-				const { message, success } = response.data
-				if (!success) throw new Error(message)
-				return message
-			} catch (err) {
-				console.error("Logout error:", err)
-				throw new Error(err as any)
-			}
+			await authClient.signOut()
+			clearUser()
+			router.push("/login")
+			return "Logged out successfully!"
 		}
 
-		toast.promise(
-			logOut().then((message) => {
-				router.push("/login")
-				return message
-			}),
-			{
-				loading: "Logging out...",
-				success: (message) => message,
-				error: (err) => err.message || "Something went wrong",
-			}
-		)
+		toast.promise(logOut(), {
+			loading: "Logging out...",
+			success: (message) => message,
+			error: (err) => err.message || "Something went wrong",
+		})
 	}
 
 	const handleSidebarItemClick = (item: SidebarItemType) => {
@@ -174,10 +163,7 @@ const Sidebar = () => {
 		}
 	}
 
-	const navigationItems = createNavigationItems(
-		profilePicture,
-		handleSidebarItemClick
-	)
+	const navigationItems = createNavigationItems(image, handleSidebarItemClick)
 
 	return (
 		<aside className="border-r border-gray-200 h-screen w-64 p-4 py-8 pb-6 flex flex-col bg-gray-50">

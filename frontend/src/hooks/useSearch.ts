@@ -19,9 +19,9 @@ const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
 export interface SearchUser {
 	_id: string
 	username: string
-	profile_picture?: string
+	image?: string
 	bio?: string
-	isVerified?: boolean
+	emailVerified?: boolean
 	followersCount: number
 	isFollowing: boolean
 }
@@ -32,13 +32,13 @@ export interface SearchPost {
 	image: string
 	author: {
 		username: string
-		profile_picture?: string
-		isVerified: boolean
+		image?: string
+		emailVerified: boolean
 	}
 	likes: Array<{
 		username: string
-		profile_picture?: string
-		isVerified: boolean
+		image?: string
+		emailVerified: boolean
 	}>
 	isBookmarked: boolean
 	bookmarksCount: number
@@ -103,11 +103,11 @@ export const useSearch = (): UseSearchReturn => {
 						comments: [], // Add empty comments array for PostGrid compatibility
 						author: {
 							...post.author,
-							isVerified: post.author.isVerified || false,
+							emailVerified: post.author.emailVerified || false,
 						},
 						likes: (post.likes || []).map((like: any) => ({
 							...like,
-							isVerified: like.isVerified || false,
+							emailVerified: like.emailVerified || false,
 						})),
 					})),
 				})

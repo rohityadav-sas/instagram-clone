@@ -31,7 +31,7 @@ notification_schema.index(
 notification_schema.post("save", async function (doc) {
 	try {
 		const notificationDetails = await doc.populate([
-			{ path: "from", select: "username profile_picture" },
+			{ path: "from", select: "username image" },
 			{ path: "to", select: "username" },
 			{ path: "post", select: "image" },
 		])

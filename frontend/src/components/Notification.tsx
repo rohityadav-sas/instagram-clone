@@ -145,9 +145,7 @@ const NotificationsComponent = () => {
 								{/* User Avatar + Icon */}
 								<div className="relative">
 									<Image
-										src={
-											notification.from.profile_picture || "/default-avatar.svg"
-										}
+										src={notification.from.image || "/default-avatar.svg"}
 										alt={notification.from.username}
 										width={56}
 										height={56}

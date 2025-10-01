@@ -3,8 +3,8 @@ import Image from "next/image"
 
 interface UserProfileProps {
 	username: string
-	profile_picture?: string
-	isVerified?: boolean
+	image?: string
+	emailVerified?: boolean
 	avatarSize?: number
 	showVerified?: boolean
 	className?: string
@@ -15,8 +15,8 @@ interface UserProfileProps {
 
 const UserProfile = ({
 	username,
-	profile_picture,
-	isVerified = false,
+	image,
+	emailVerified = false,
 	avatarSize = 25,
 	showVerified = true,
 	text = "",
@@ -38,7 +38,7 @@ const UserProfile = ({
 	return (
 		<div className={`flex gap-2 items-start`}>
 			<Image
-				src={profile_picture || "/default-avatar.svg"}
+				src={image || "/default-avatar.svg"}
 				alt={username || "User Avatar"}
 				width={avatarSize}
 				height={avatarSize}
@@ -58,7 +58,7 @@ const UserProfile = ({
 					>
 						{username}
 					</span>
-					{showVerified && isVerified && (
+					{showVerified && emailVerified && (
 						<CheckCircle className="size-3 text-blue-500" />
 					)}
 				</div>

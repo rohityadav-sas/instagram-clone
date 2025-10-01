@@ -10,15 +10,17 @@ import EditProfileDialog from "./edit-profile-dialog"
 import BlockUserDialog from "./block-user-dialog"
 import UsersListDialog from "./users-list-dialog"
 import DeleteUserDialog from "./delete-user-dialog"
+import { authClient } from "@/auth/auth-client"
 
 interface AboutProps {
+	fullname: string
 	username: string
-	profile_picture: string
+	image: string
 	gender: string
 	bio: string
 	followersCount: number
 	followingCount: number
-	isVerified?: boolean
+	emailVerified?: boolean
 	isUserLoading?: boolean
 	isUserError?: boolean
 	error?: string
@@ -28,13 +30,14 @@ interface AboutProps {
 }
 
 const About = ({
+	fullname,
 	username,
-	profile_picture,
+	image,
 	gender,
 	bio,
 	followersCount,
 	followingCount,
-	isVerified = false,
+	emailVerified = false,
 	isUserLoading,
 	isUserError,
 	error,
@@ -56,6 +59,25 @@ const About = ({
 		enabled: !!username,
 	})
 
+	const session = authClient.useSession()
+
+	const handleVerify = async () => {
+		const fn = async () => {
+			if (!session.data?.user.email)
+				throw new Error("No email associated with this account")
+
+			const { error } = await authClient.sendVerificationEmail({
+				email: session.data?.user.email!,
+				callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+			})
+			if (error) throw new Error(error.message)
+		}
+		toast.promise(fn(), {
+			loading: "Sending verification email...",
+			success: "Verification email sent!",
+			error: (err) => err.message || "Error sending verification email",
+		})
+	}
 	const {
 		data: bookmarks,
 		isLoading: isBookmarksLoading,
@@ -172,7 +194,6 @@ const About = ({
 			</div>
 		)
 	}
-
 	return (
 		<div className="flex-1 overflow-y-auto">
 			<div className="max-w-4xl mx-auto p-8">
@@ -181,7 +202,7 @@ const About = ({
 					{/* Profile Picture */}
 					<div className="flex-shrink-0">
 						<Image
-							src={profile_picture ? profile_picture : "/default-avatar.svg"}
+							src={image || "/default-avatar.svg"}
 							alt={username || "User Avatar"}
 							width={150}
 							height={150}
@@ -198,7 +219,19 @@ const About = ({
 						<div className="flex items-center gap-4 mb-4">
 							<h1 className="text-2xl font-light flex items-center gap-1">
 								{username}
-								{isVerified && <CheckCircle className="size-4 text-blue-500" />}
+								{emailVerified ? (
+									<CheckCircle className="size-4 text-blue-500" />
+								) : (
+									isOwnProfile && (
+										<button
+											title="Verify your email to get the verified badge"
+											onClick={handleVerify}
+											className="ml-2 cursor-pointer text-xs px-4 py-1 border border-blue-500 text-blue-500 rounded hover:bg-blue-50 transition-colors font-semibold"
+										>
+											Verify
+										</button>
+									)
+								)}
 							</h1>
 
 							<button
@@ -211,10 +244,11 @@ const About = ({
 								{isOwnProfile ? (
 									<EditProfileDialog
 										currentProfile={{
+											name: fullname,
 											username,
 											bio,
 											gender,
-											profile_picture,
+											image,
 										}}
 									>
 										<span>Edit profile</span>

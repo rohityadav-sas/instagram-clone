@@ -3,8 +3,8 @@ export type existingChat = {
 	members: {
 		_id: string
 		username: string
-		profile_picture: string
-		isVerified: boolean
+		image: string
+		emailVerified: boolean
 	}[]
 	last_message: {
 		_id: string
@@ -18,8 +18,8 @@ export type existingChat = {
 export type availableUserForNewChat = {
 	_id: string
 	username: string
-	profile_picture: string
-	isVerified: boolean
+	image: string
+	emailVerified: boolean
 }
 
 export type lastMessage = {

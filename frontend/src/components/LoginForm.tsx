@@ -9,12 +9,15 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import Image from "next/image"
 import toast from "react-hot-toast"
-import axios_instance from "@/config/axios"
 import { useUserStore } from "@/store/store"
+import { authClient } from "@/auth/auth-client"
+import axios_instance from "@/config/axios"
+import { useRouter } from "next/navigation"
 
 interface LoginFormData {
-	emailOrUsername: string
 	password: string
+	email?: string
+	username?: string
 }
 
 export function LoginForm({
@@ -23,27 +26,80 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
 	const [loading, setLoading] = useState(false)
 	const setUser = useUserStore((state) => state.setUser)
+	const [selectedEmail, setSelectedEmail] = useState<boolean>(true)
+	const LoginWithGitHub = async () => {
+		await authClient.signIn.social({
+			provider: "github",
+			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+		})
+	}
+	const LoginWithGoogle = async () => {
+		await authClient.signIn.social({
+			provider: "google",
+			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+		})
+	}
+
+	const router = useRouter()
+
+	const forgotPassword = async () => {
+		const fn = async () => {
+			if (!watch("email")) {
+				throw new Error("Please enter your email address")
+			}
+			const { error } = await authClient.requestPasswordReset({
+				email: watch("email") || "",
+				redirectTo: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/reset-password`,
+			})
+			if (error) {
+				if (error.status === 400) {
+					throw new Error("Email address is not valid")
+				}
+				throw new Error(error.message)
+			}
+		}
+		toast.promise(fn(), {
+			loading: "Sending password reset email...",
+			success: "Password reset email sent.",
+			error: (err) => err.message || "Something went wrong",
+		})
+	}
 
 	const {
 		register,
 		handleSubmit,
+		watch,
 		formState: { errors },
 	} = useForm<LoginFormData>()
 
-	const onSubmit = async (data: LoginFormData) => {
+	const onSubmit = async ({ email, password, username }: LoginFormData) => {
 		setLoading(true)
 
 		async function login() {
-			const response = await axios_instance.post("/users/login", {
-				email: data.emailOrUsername,
-				password: data.password,
-			})
-			const { message, success } = response.data
-			if (!success) throw new Error(message)
+			let response
+			if (email) {
+				response = await authClient.signIn.email({
+					email: email,
+					password: password,
+					callbackURL: "/",
+				})
+			} else if (username) {
+				response = await authClient.signIn.username({
+					username: username,
+					password: password,
+					callbackURL: "/",
+				})
+			}
+			if (response?.error) {
+				if (response.error.status === 403) {
+					throw new Error("Please verify your email address")
+				}
+				throw new Error(response.error.message)
+			}
+			if (response?.data?.user) router.push("/")
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
-			window.location.href = "/"
-			return message
+			return "Logged in successfully!"
 		}
 
 		toast
@@ -65,30 +121,69 @@ export function LoginForm({
 							<div className="flex flex-col items-center text-center">
 								<h1 className="text-2xl font-bold">Welcome back</h1>
 								<p className="text-muted-foreground text-balance">
-									Login to your Fakegram account
+									Login to your Instagram account
 								</p>
 							</div>
 
 							<div className="grid gap-3">
-								<Label htmlFor="emailOrUsername">Email or Username</Label>
-								<Input
-									id="emailOrUsername"
-									{...register("emailOrUsername", {
-										required: "Email or Username is required",
-									})}
-								/>
-								{errors.emailOrUsername && (
-									<p className="text-red-500 text-sm">
-										{errors.emailOrUsername.message}
-									</p>
+								{selectedEmail ? (
+									<>
+										<div className="flex justify-between items-center">
+											<Label htmlFor="email">Email</Label>
+											<span
+												className="text-sm hover:underline cursor-pointer"
+												onClick={() => {
+													setSelectedEmail(false)
+												}}
+											>
+												Login with username
+											</span>
+										</div>
+										<Input
+											id="email"
+											{...register("email", {
+												required: "Email is required",
+											})}
+										/>
+										{errors.email && (
+											<p className="text-red-500 text-sm">
+												{errors.email.message}
+											</p>
+										)}
+									</>
+								) : (
+									<>
+										<div className="flex justify-between items-center">
+											<Label htmlFor="username">Username</Label>
+											<span
+												className="text-sm hover:underline cursor-pointer"
+												onClick={() => {
+													setSelectedEmail(true)
+												}}
+											>
+												Login with email
+											</span>
+										</div>
+										<Input
+											id="username"
+											{...register("username", {
+												required: "Username is required",
+											})}
+										/>
+										{errors.username && (
+											<p className="text-red-500 text-sm">
+												{errors.username.message}
+											</p>
+										)}
+									</>
 								)}
 							</div>
 							<div className="grid gap-3">
 								<div className="flex items-center">
 									<Label htmlFor="password">Password</Label>
 									<a
-										href="#"
-										className="ml-auto text-sm underline-offset-2 hover:underline"
+										className="ml-auto text-sm underline-offset-2 hover:underline cursor-pointer"
+										onClick={forgotPassword}
 									>
 										Forgot your password?
 									</a>
@@ -123,6 +218,7 @@ export function LoginForm({
 									variant="outline"
 									type="button"
 									className="w-full cursor-pointer"
+									onClick={LoginWithGitHub}
 								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -139,6 +235,7 @@ export function LoginForm({
 									variant="outline"
 									type="button"
 									className="w-full cursor-pointer"
+									onClick={LoginWithGoogle}
 								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -174,7 +271,7 @@ export function LoginForm({
 					</form>
 					<div className="bg-muted relative hidden md:block">
 						<Image
-							src="/login_banner1.jpg"
+							src="/login_banner.png"
 							alt="Login banner"
 							fill
 							sizes="(max-width: 768px) 0vw, 50vw"

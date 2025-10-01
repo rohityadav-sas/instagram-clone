@@ -5,7 +5,7 @@ export type Story = {
 	author: {
 		_id: string
 		username: string
-		profile_picture?: string
+		image?: string
 	}
 	viewers: string[]
 	expiresAt: string

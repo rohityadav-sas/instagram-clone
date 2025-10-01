@@ -157,7 +157,7 @@ const UserItem = ({ user, currentUsername }: UserItemProps) => {
 		<div className="flex items-center gap-3 p-2 hover:bg-gray-50 transition-colors cursor-pointer">
 			<div className="flex-shrink-0">
 				<Image
-					src={user.profile_picture || "/default-avatar.svg"}
+					src={user.image || "/default-avatar.svg"}
 					alt={user.username}
 					width={44}
 					height={44}
@@ -179,7 +179,7 @@ const UserItem = ({ user, currentUsername }: UserItemProps) => {
 					<span className="font-semibold text-sm truncate">
 						{user.username}
 					</span>
-					{user.isVerified && (
+					{user.emailVerified && (
 						<CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
 					)}
 				</div>

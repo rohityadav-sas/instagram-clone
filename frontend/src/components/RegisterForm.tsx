@@ -12,8 +12,10 @@ import Image from "next/image"
 import toast from "react-hot-toast"
 import axios_instance from "@/config/axios"
 import { useUserStore } from "@/store/store"
+import { authClient } from "@/auth/auth-client"
 
 interface SignupFormData {
+	name: string
 	email: string
 	username: string
 	password: string
@@ -38,27 +40,31 @@ export function SignupForm({
 
 	const password = watch("password")
 
-	const onSubmit = async (data: SignupFormData) => {
+	const onSubmit = async ({
+		email,
+		name,
+		username,
+		password,
+	}: SignupFormData) => {
 		setLoading(true)
 
 		async function register() {
-			const response = await axios_instance.post("/users/register", {
-				email: data.email,
-				username: data.username,
-				password: data.password,
+			const { error } = await authClient.signUp.email({
+				email,
+				password,
+				username,
+				name,
+				callbackURL: "/",
 			})
-			const { message, success } = response.data
-			if (!success) throw new Error(message)
-			return message
+			if (error) throw new Error(error.message)
+			const user_response = await axios_instance.get("/users/me")
+			setUser(user_response.data.data)
+			return "Registration successful!"
 		}
 
 		toast
 			.promise(
 				register().then(async (message) => {
-					await axios_instance.post("/users/login", {
-						email: data.email,
-						password: data.password,
-					})
 					router.push("/")
 					const user_response = await axios_instance.get("/users/me")
 					setUser(user_response.data.data)
@@ -85,6 +91,20 @@ export function SignupForm({
 								<p className="text-muted-foreground text-balance">
 									Join Fakegram and share your moments
 								</p>
+							</div>
+
+							<div className="grid gap-3">
+								<Label htmlFor="name">Name</Label>
+								<Input
+									id="name"
+									type="text"
+									{...register("name", {
+										required: "Name is required",
+									})}
+								/>
+								{errors.name && (
+									<p className="text-red-500 text-sm">{errors.name.message}</p>
+								)}
 							</div>
 
 							<div className="grid gap-3">
@@ -256,7 +276,7 @@ export function SignupForm({
 					</form>
 					<div className="bg-muted relative hidden md:block">
 						<Image
-							src="/login_banner1.jpg"
+							src="/login_banner.png"
 							alt="Login banner"
 							fill
 							sizes="(max-width: 768px) 0vw, 50vw"

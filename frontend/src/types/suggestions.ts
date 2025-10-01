@@ -3,7 +3,7 @@ export interface SuggestedAccountData {
 	_id: string
 	username: string
 	email: string
-	profile_picture?: string
+	image?: string
 	bio?: string
 	gender?: string
 	followers: string[]
@@ -12,7 +12,7 @@ export interface SuggestedAccountData {
 	createdAt: string
 	updatedAt: string
 	// Additional UI-specific fields
-	isVerified?: boolean
+	emailVerified?: boolean
 	followedBy?: string[] // usernames of mutual followers
 	isFollowing?: boolean
 	fullName?: string // computed from bio or username
@@ -32,7 +32,7 @@ export interface UserProfile {
 	_id: string
 	username: string
 	email: string
-	profile_picture?: string
+	image?: string
 	bio?: string
 	gender?: string
 	followers: string[]
@@ -41,7 +41,7 @@ export interface UserProfile {
 	createdAt: string
 	updatedAt: string
 	// Additional UI-specific fields
-	isVerified?: boolean
+	emailVerified?: boolean
 	followersCount?: number // computed from followers.length
 	followingCount?: number // computed from following.length
 	postsCount?: number // computed from user's posts

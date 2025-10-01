@@ -1,8 +1,5 @@
 import { Router } from "express"
 import {
-	register_user,
-	login_user,
-	logout_user,
 	get_profile,
 	get_current_user,
 	edit_profile,
@@ -14,7 +11,6 @@ import {
 	get_user_followers,
 	get_user_following,
 	is_following,
-	delete_account,
 } from "../controllers/user.controller.js"
 import { is_authenticated } from "../middlewares/is_authenticated.js"
 import multer from "multer"
@@ -22,14 +18,8 @@ import multer from "multer"
 const router = Router()
 const upload = multer()
 
-// Public routes
-router.post("/register", register_user)
-router.post("/login", login_user)
-
-// Protected routes
 router.use(is_authenticated)
 router.get("/me", get_current_user)
-router.get("/logout", logout_user)
 router.get("/suggested", get_suggested_users)
 router.get("/search", search_users)
 router.get("/is-following/:identifier", is_following)
@@ -40,8 +30,6 @@ router.get("/:identifier/following", get_user_following)
 router.post("/toggle-follow/:identifier", toggle_follow_user)
 router.post("/block/:identifier", block_user)
 router.post("/unblock/:identifier", unblock_user)
-router.post("/profile/edit", upload.single("profile_picture"), edit_profile)
-
-router.delete("/delete", delete_account)
+router.post("/profile/edit", upload.single("image"), edit_profile)
 
 export default router

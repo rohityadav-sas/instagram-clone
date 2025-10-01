@@ -61,7 +61,7 @@ const ExploreComponent = () => {
 								<SuggestedUserCard
 									key={user.username}
 									username={user.username}
-									profile_picture={user.profile_picture}
+									image={user.image}
 									bio={user.bio}
 								/>
 							))}

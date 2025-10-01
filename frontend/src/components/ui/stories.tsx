@@ -11,14 +11,14 @@ import StoryViewer from "./story-viewer"
 const Stories = () => {
 	const userId = useUserStore((state) => state._id)
 	const username = useUserStore((state) => state.username)
-	const profilePicture = useUserStore((state) => state.profile_picture)
+	const image = useUserStore((state) => state.image)
 	const user = useMemo(
 		() => ({
 			_id: userId,
 			username,
-			profile_picture: profilePicture,
+			image: image,
 		}),
-		[userId, username, profilePicture]
+		[userId, username, image]
 	)
 
 	const { groupedStories, isLoading, viewStory } = useStories()
@@ -119,11 +119,7 @@ const Stories = () => {
 								<div className="relative">
 									<div className="w-16 h-16 rounded-full border-2 border-gray-200 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors">
 										<Image
-											src={
-												user.profile_picture
-													? user.profile_picture
-													: "/default-avatar.svg"
-											}
+											src={user.image ? user.image : "/default-avatar.svg"}
 											alt={user.username}
 											width={56}
 											height={56}
@@ -160,9 +156,7 @@ const Stories = () => {
 								>
 									<div className="bg-white p-0.5 rounded-full">
 										<Image
-											src={
-												storyGroup.user.profile_picture || "/default-avatar.svg"
-											}
+											src={storyGroup.user.image || "/default-avatar.svg"}
 											alt={storyGroup.user.username}
 											width={56}
 											height={56}

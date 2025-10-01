@@ -5,6 +5,7 @@ import cloudinary from "../config/cloudinary.js"
 import { get_data_uri } from "../utils/data_uri.js"
 import Comment from "../models/comment.model.js"
 import Notification from "../models/notification.model.js"
+import mongoose from "mongoose"
 
 export const create_post = async (req: Request, res: Response) => {
 	try {
@@ -179,8 +180,8 @@ export const get_user_posts = async (req: Request, res: Response) => {
 			.sort({ createdAt: -1 })
 			.limit(limit + 1)
 			.select("_id image caption author likes createdAt")
-			.populate("author", "username profile_picture isVerified")
-			.populate("likes", "username profile_picture isVerified")
+			.populate("author", "username image emailVerified")
+			.populate("likes", "username image emailVerified")
 			.lean()
 
 		const postIds = posts.map((p) => p._id)
@@ -327,8 +328,8 @@ export const get_explore_posts = async (req: Request, res: Response) => {
 
 					author: {
 						username: "$author.username",
-						profile_picture: "$author.profile_picture",
-						isVerified: "$author.isVerified",
+						image: "$author.image",
+						emailVerified: "$author.emailVerified",
 					},
 
 					likes: {
@@ -337,8 +338,8 @@ export const get_explore_posts = async (req: Request, res: Response) => {
 							as: "likeUser",
 							in: {
 								username: "$$likeUser.username",
-								profile_picture: "$$likeUser.profile_picture",
-								isVerified: "$$likeUser.isVerified",
+								image: "$$likeUser.image",
+								emailVerified: "$$likeUser.emailVerified",
 							},
 						},
 					},
@@ -358,15 +359,15 @@ export const get_explore_posts = async (req: Request, res: Response) => {
 										as: "clike",
 										in: {
 											username: "$$clike.username",
-											profile_picture: "$$clike.profile_picture",
-											isVerified: "$$clike.isVerified",
+											image: "$$clike.image",
+											emailVerified: "$$clike.emailVerified",
 										},
 									},
 								},
 								author: {
 									username: "$$comment.author.username",
-									profile_picture: "$$comment.author.profile_picture",
-									isVerified: "$$comment.author.isVerified",
+									image: "$$comment.author.image",
+									emailVerified: "$$comment.author.emailVerified",
 								},
 							},
 						},
@@ -414,10 +415,10 @@ export const search_posts = async (req: Request, res: Response) => {
 		})
 			.populate({
 				path: "author",
-				select: "username profile_picture isVerified blocked_users",
+				select: "username image emailVerified blocked_users",
 				match: { blocked_users: { $ne: current_user._id } },
 			})
-			.populate("likes", "username profile_picture isVerified")
+			.populate("likes", "username image emailVerified")
 			.sort({ createdAt: -1 })
 			.limit(limit)
 			.lean()
@@ -497,10 +498,10 @@ export const get_feed_posts = async (req: Request, res: Response) => {
 		})
 			.populate({
 				path: "author",
-				select: "username profile_picture isVerified blocked_users",
+				select: "username image emailVerified blocked_users",
 				match: { blocked_users: { $ne: current_user._id } },
 			})
-			.populate("likes", "username profile_picture isVerified")
+			.populate("likes", "username image emailVerified")
 			.sort({ createdAt: -1 })
 			.skip(skip)
 			.limit(limit)
@@ -511,7 +512,7 @@ export const get_feed_posts = async (req: Request, res: Response) => {
 		// Get comment counts for each post
 		const postIds = posts.map((post) => post._id)
 		const comments = await Comment.find({ post: { $in: postIds } })
-			.populate("author", "username profile_picture isVerified")
+			.populate("author", "username image emailVerified")
 			.sort({ createdAt: 1 })
 			.lean()
 
@@ -605,7 +606,7 @@ export const get_post_likes = async (req: Request, res: Response) => {
 				{ _id: { $nin: current_user.blocked_users } },
 			],
 		})
-			.select("username full_name profile_picture isVerified")
+			.select("username full_name image emailVerified")
 			.lean()
 
 		// Add following status for each user who liked
@@ -643,8 +644,12 @@ export const get_bookmarked_posts = async (req: Request, res: Response) => {
 			})
 		}
 
+		const bookmarkIds = current_user.bookmarks.map(
+			(id) => new mongoose.Types.ObjectId(id)
+		)
+
 		const bookmarked_posts = await Post.aggregate([
-			{ $match: { _id: { $in: current_user.bookmarks } } },
+			{ $match: { _id: { $in: bookmarkIds } } },
 
 			// Add a field that reflects the index in the user's bookmarks array
 			{
@@ -657,7 +662,7 @@ export const get_bookmarked_posts = async (req: Request, res: Response) => {
 			// Lookup bookmark counts
 			{
 				$lookup: {
-					from: "users",
+					from: "user",
 					let: { postId: "$_id" },
 					pipeline: [
 						{ $match: { $expr: { $in: ["$$postId", "$bookmarks"] } } },
@@ -688,7 +693,7 @@ export const get_bookmarked_posts = async (req: Request, res: Response) => {
 			// Populate author
 			{
 				$lookup: {
-					from: "users",
+					from: "user",
 					localField: "author",
 					foreignField: "_id",
 					as: "author",
@@ -699,14 +704,14 @@ export const get_bookmarked_posts = async (req: Request, res: Response) => {
 			// Populate likes
 			{
 				$lookup: {
-					from: "users",
+					from: "user",
 					localField: "likes",
 					foreignField: "_id",
 					as: "likes",
 				},
 			},
 
-			// Project final fields
+			// Project final fields properly
 			{
 				$project: {
 					_id: 1,
@@ -716,17 +721,26 @@ export const get_bookmarked_posts = async (req: Request, res: Response) => {
 					bookmarksCount: 1,
 					isBookmarked: 1,
 					commentsCount: 1,
+					bookmarkIndex: 1, // keep for sorting
+
 					author: {
 						username: "$author.username",
-						profile_picture: "$author.profile_picture",
-						isVerified: "$author.isVerified",
+						image: "$author.image",
+						emailVerified: "$author.emailVerified",
 					},
+
 					likes: {
-						username: 1,
-						profile_picture: 1,
-						isVerified: 1,
+						$map: {
+							input: "$likes",
+							as: "likeUser",
+							in: {
+								_id: "$$likeUser._id",
+								username: "$$likeUser.username",
+								image: "$$likeUser.image",
+								emailVerified: "$$likeUser.emailVerified",
+							},
+						},
 					},
-					bookmarkIndex: 1, // keep for sorting
 				},
 			},
 

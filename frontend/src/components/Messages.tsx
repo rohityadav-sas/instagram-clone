@@ -204,7 +204,7 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative">
 								<Image
 									alt="Profile Picture"
-									src={chat.members[0].profile_picture || "/default-avatar.svg"}
+									src={chat.members[0].image || "/default-avatar.svg"}
 									width={50}
 									height={50}
 									style={{
@@ -220,7 +220,7 @@ const MessagesComponent = () => {
 							<div className="flex flex-col w-full">
 								<div className="font-medium flex items-center gap-1">
 									<span>{chat.members[0].username}</span>
-									{chat.members[0].isVerified && (
+									{chat.members[0].emailVerified && (
 										<CheckCircle className="text-blue-500" size={12} />
 									)}
 								</div>
@@ -261,8 +261,8 @@ const MessagesComponent = () => {
 										{
 											_id: user._id,
 											username: user.username,
-											profile_picture: user.profile_picture,
-											isVerified: user.isVerified,
+											image: user.image,
+											emailVerified: user.emailVerified,
 										},
 									],
 									last_message: {
@@ -278,7 +278,7 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative">
 								<Image
 									alt="Profile Picture"
-									src={user.profile_picture || "/default-avatar.svg"}
+									src={user.image || "/default-avatar.svg"}
 									width={35}
 									height={35}
 									style={{
@@ -294,7 +294,7 @@ const MessagesComponent = () => {
 							<div className="flex flex-col">
 								<div className="font-medium flex items-center gap-1">
 									<span>{user.username}</span>
-									{user.isVerified && (
+									{user.emailVerified && (
 										<CheckCircle className="text-blue-500" size={12} />
 									)}
 								</div>
@@ -312,10 +312,7 @@ const MessagesComponent = () => {
 							<div className="flex mr-3 relative items-center gap-2">
 								<Image
 									alt="Profile Picture"
-									src={
-										selectedChat.members[0].profile_picture ||
-										"/default-avatar.svg"
-									}
+									src={selectedChat.members[0].image || "/default-avatar.svg"}
 									width={40}
 									height={40}
 									style={{
@@ -332,7 +329,7 @@ const MessagesComponent = () => {
 										}}
 									>
 										{selectedChat.members[0].username}
-										{selectedChat.members[0].isVerified && (
+										{selectedChat.members[0].emailVerified && (
 											<CheckCircle className="text-blue-500" size={12} />
 										)}
 									</div>

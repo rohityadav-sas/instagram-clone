@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-	title: "Instagram Clone",
+	title: "Instagram",
 	description: "A simple Instagram clone built with Next.js and Tailwind CSS",
 	icons: {
 		icon: "/favicon.png",

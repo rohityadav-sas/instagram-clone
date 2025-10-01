@@ -159,8 +159,8 @@ const CommentsDialog = ({
 						<div className="p-4 border-b flex justify-between gap-2">
 							<UserProfile
 								username={postData.author.username}
-								profile_picture={postData.author.profile_picture}
-								isVerified={postData.author.isVerified}
+								image={postData.author.image}
+								emailVerified={postData.author.emailVerified}
 								avatarSize={35}
 								text={postData.caption}
 								textCreatedAt={new Date(postData.createdAt).toLocaleString()}
@@ -215,8 +215,8 @@ const CommentsDialog = ({
 										<div key={comment._id} className="flex gap-2 items-center">
 											<UserProfile
 												username={comment.author.username}
-												profile_picture={comment.author.profile_picture}
-												isVerified={comment.author.isVerified}
+												image={comment.author.image}
+												emailVerified={comment.author.emailVerified}
 												avatarSize={35}
 												text={comment.text}
 												textCreatedAt={new Date(

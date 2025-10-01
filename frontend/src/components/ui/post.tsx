@@ -48,7 +48,7 @@ const Post = ({ postData }: { postData: Post }) => {
 			<div className="p-4">
 				<PostHeader
 					username={postData.author.username}
-					userAvatar={postData.author.profile_picture}
+					userAvatar={postData.author.image}
 				/>
 			</div>
 

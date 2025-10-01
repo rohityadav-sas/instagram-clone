@@ -1,28 +1,22 @@
-import jwt from "jsonwebtoken"
 import { type Request, type Response, type NextFunction } from "express"
-import ENV from "../config/env.js"
+import { auth } from "../auth/auth.js"
+import { fromNodeHeaders } from "better-auth/node"
 
-export const is_authenticated = (
+export const is_authenticated = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
-	const token = req.cookies.token || req.headers.authorization?.split(" ")[1]
-	if (!token) {
-		res.status(401).json({ message: "Unauthorized", success: false })
-		return
-	}
 	try {
-		if (!ENV.JWT_SECRET) {
-			res.status(500).json({ message: "JWT_SECRET missing", success: false })
-			return
+		const session = await auth.api.getSession({
+			headers: fromNodeHeaders(req.headers),
+		})
+		if (!session) {
+			return res.status(401).json({ message: "Unauthorized", success: false })
 		}
-		const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-			id: string
-		}
-		req.id = decoded.id
-		next()
+		req.id = session.user?.id
+		return next()
 	} catch (err) {
-		res.status(401).json({ message: "Invalid token", success: false })
+		res.status(401).json({ message: "Error on middleware", success: false })
 	}
 }

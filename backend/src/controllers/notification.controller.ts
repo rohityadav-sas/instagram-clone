@@ -6,7 +6,7 @@ export const getNotifications = async (req: Request, res: Response) => {
 	try {
 		const userId = req.id
 		const notifications = await Notification.find({ to: userId })
-			.populate("from", "username profile_picture isVerified")
+			.populate("from", "username image emailVerified")
 			.populate("post", "image")
 			.sort({ createdAt: -1 })
 

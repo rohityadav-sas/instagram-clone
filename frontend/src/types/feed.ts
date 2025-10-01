@@ -3,7 +3,7 @@ export interface UserData {
 	_id: string
 	username: string
 	email: string
-	profile_picture?: string
+	image?: string
 	bio?: string
 	gender?: string
 	followers: string[]
@@ -20,7 +20,7 @@ export interface CommentData {
 	author: {
 		_id: string
 		username: string
-		profile_picture?: string
+		image?: string
 	}
 	post: string
 	likes: string[]

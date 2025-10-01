@@ -8,12 +8,13 @@ const useUserStore = create<User>()(
 	persist(
 		(set) => ({
 			_id: "",
+			name: "",
 			username: "",
 			email: "",
-			profile_picture: "",
+			image: "",
 			bio: "",
 			gender: "",
-			isVerified: false,
+			emailVerified: false,
 			followersCount: 0,
 			followingCount: 0,
 			bookmarksCount: 0,
@@ -25,11 +26,12 @@ const useUserStore = create<User>()(
 			clearUser: () =>
 				set({
 					username: "",
+					name: "",
 					email: "",
-					profile_picture: "",
+					image: null,
 					bio: "",
 					gender: "",
-					isVerified: false,
+					emailVerified: false,
 					followersCount: 0,
 					followingCount: 0,
 					bookmarksCount: 0,

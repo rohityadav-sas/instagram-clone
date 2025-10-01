@@ -1,25 +1,20 @@
 import { type Server as IOServer, type Socket } from "socket.io"
-import jwt, { type JwtPayload } from "jsonwebtoken"
-import ENV from "../config/env.js"
 import User from "../models/user.model.js"
 import Chat from "../models/chat.model.js"
 import Message from "../models/message.model.js"
 import Post from "../models/post.model.js"
+import { auth } from "../auth/auth.js"
+import { fromNodeHeaders } from "better-auth/node"
 
 const online_users = new Map<string, string>()
 
 export function initSocket(io: IOServer) {
-	io.use((socket, next) => {
+	io.use(async (socket, next) => {
 		try {
-			let token = socket.handshake.headers.cookie
-				?.split("; ")
-				.find((c) => c.startsWith("token="))
-				?.split("=")[1]
-			if (!token) token = socket.handshake.headers.token as string
-			if (!token) return next(new Error("Token missing"))
-			const payload = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload
-			if (!payload || !payload.id) return next(new Error("Invalid token"))
-			socket.data.userId = payload.id
+			const payload = await auth.api.getSession({
+				headers: fromNodeHeaders(socket.handshake.headers),
+			})
+			socket.data.userId = payload?.user?.id
 			next()
 		} catch (err) {
 			return next(new Error("Authentication error"))
@@ -170,9 +165,7 @@ export function initSocket(io: IOServer) {
 
 		socket.on("likePost", async (postId: string) => {
 			try {
-				const user = await User.findById(userId).select(
-					"username profile_picture"
-				)
+				const user = await User.findById(userId).select("username image")
 				if (!user) return
 				const post = await Post.findOne({ _id: postId })
 				io.to(online_users.get(post?.author?.toString() || "") || "").emit(
@@ -180,7 +173,7 @@ export function initSocket(io: IOServer) {
 					{
 						post_image: post?.image || "",
 						username: user.username,
-						profile_picture: user.profile_picture,
+						image: user.image,
 					}
 				)
 			} catch (err) {
@@ -190,9 +183,7 @@ export function initSocket(io: IOServer) {
 
 		socket.on("commentPost", async (postId: string) => {
 			try {
-				const user = await User.findById(userId).select(
-					"username profile_picture"
-				)
+				const user = await User.findById(userId).select("username image")
 				if (!user) return
 				const post = await Post.findOne({ _id: postId })
 				io.to(online_users.get(post?.author?.toString() || "") || "").emit(
@@ -200,7 +191,7 @@ export function initSocket(io: IOServer) {
 					{
 						post_image: post?.image || "",
 						username: user.username,
-						profile_picture: user.profile_picture,
+						image: user.image,
 					}
 				)
 			} catch (err) {
@@ -210,13 +201,11 @@ export function initSocket(io: IOServer) {
 
 		socket.on("followUser", async (followedUserId: string) => {
 			try {
-				const user = await User.findById(userId).select(
-					"username profile_picture"
-				)
+				const user = await User.findById(userId).select("username image")
 				if (!user) return
 				io.to(online_users.get(followedUserId) || "").emit("newFollower", {
 					username: user.username,
-					profile_picture: user.profile_picture,
+					image: user.image,
 				})
 			} catch (err) {}
 		})

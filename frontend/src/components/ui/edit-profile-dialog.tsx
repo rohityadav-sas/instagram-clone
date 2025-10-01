@@ -12,28 +12,32 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useEditProfile } from "@/hooks/useEditProfile"
 import toast from "react-hot-toast"
 import { useUserStore } from "@/store/store"
 import axios_instance from "@/config/axios"
+import { set } from "mongoose"
+import { authClient } from "@/auth/auth-client"
 
 interface EditProfileDialogProps {
 	children: React.ReactNode
 	currentProfile: {
+		name: string
 		username: string
 		bio: string
 		gender: string
-		profile_picture: string
+		image: string
 	}
 }
 
 interface FormData {
+	name: string
 	username: string
 	bio: string
 	gender: string
-	password: string
+	currentPassword?: string
+	newPassword?: string
+	revokeSessions?: boolean
 }
 
 const EditProfileDialog = ({
@@ -44,33 +48,28 @@ const EditProfileDialog = ({
 	const [previewImage, setPreviewImage] = useState<string | null>(null)
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
 	const { setUserAsync } = useUserStore()
-
-	const { editProfile, isLoading } = useEditProfile()
+	const [isLoading, setIsLoading] = useState(false)
 
 	const {
 		register,
 		handleSubmit,
 		reset,
-		formState: { errors },
+		formState: { errors: _ },
 	} = useForm<FormData>({
 		defaultValues: {
-			username: "",
 			bio: "",
 			gender: "male",
-			password: "",
+			revokeSessions: false,
 		},
 	})
 
-	// Reset form when dialog opens
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen)
 		if (newOpen) {
-			// Reset form with current profile data when opening
 			reset({
-				username: currentProfile.username || "",
 				bio: currentProfile.bio || "",
 				gender: currentProfile.gender || "male",
-				password: "",
+				revokeSessions: false,
 			})
 			setPreviewImage(null)
 			setSelectedFile(null)
@@ -91,33 +90,54 @@ const EditProfileDialog = ({
 	}
 
 	const onSubmit = (data: FormData) => {
+		setIsLoading(true)
 		const submitData: any = {}
 
-		// Only include changed fields
-		if (data.username.trim() && data.username !== currentProfile.username) {
+		if (data.name?.trim() && data.name.trim() !== currentProfile.name) {
+			submitData.name = data.name.trim()
+		}
+		if (
+			data.username?.trim() &&
+			data.username.trim() !== currentProfile.username
+		) {
 			submitData.username = data.username.trim()
 		}
-		if (data.bio.trim() !== currentProfile.bio) {
+		if (data.bio?.trim() && data.bio.trim() !== currentProfile.bio) {
 			submitData.bio = data.bio.trim()
 		}
-		if (data.gender !== currentProfile.gender) {
+		if (data.gender && data.gender !== currentProfile.gender) {
 			submitData.gender = data.gender
 		}
-		if (data.password.trim()) {
-			submitData.password = data.password.trim()
-		}
 		if (selectedFile) {
-			submitData.profile_picture = selectedFile
+			submitData.image = selectedFile
 		}
 
-		// Only submit if there are changes
+		if (data.currentPassword && data.newPassword) {
+			submitData.currentPassword = data.currentPassword
+			submitData.newPassword = data.newPassword
+			if (data.revokeSessions && data.revokeSessions) {
+				authClient.revokeOtherSessions()
+			}
+		}
+
 		if (Object.keys(submitData).length === 0) {
 			setOpen(false)
+			setIsLoading(false)
 			return
 		}
 
-		toast.promise(
-			editProfile(submitData).then(async () => {
+		const editProfile = async () => {
+			try {
+				const { data: updateData } = await axios_instance.post(
+					"/users/profile/edit",
+					submitData,
+					{
+						headers: {
+							"Content-Type": "multipart/form-data",
+						},
+					}
+				)
+				if (!updateData.success) throw new Error(updateData.message)
 				setOpen(false)
 				reset()
 				setPreviewImage(null)
@@ -125,13 +145,20 @@ const EditProfileDialog = ({
 				const { data } = await axios_instance.get("/users/me")
 				await setUserAsync(data.data)
 				window.location.href = `/${data.data.username}`
-			}),
-			{
+			} catch (err) {
+				throw err
+			}
+		}
+
+		toast
+			.promise(editProfile(), {
 				loading: "Updating profile...",
 				success: "Profile updated successfully!",
 				error: (err) => err?.message || "Failed to update profile",
-			}
-		)
+			})
+			.finally(() => {
+				setIsLoading(false)
+			})
 	}
 
 	return (
@@ -150,7 +177,7 @@ const EditProfileDialog = ({
 								<Image
 									src={
 										previewImage ||
-										currentProfile.profile_picture ||
+										currentProfile.image ||
 										"/default-avatar.svg"
 									}
 									alt="Profile"
@@ -189,101 +216,85 @@ const EditProfileDialog = ({
 						</div>
 					</div>
 
-					{/* Form Fields */}
+					{/* Profile Info Fields */}
 					<div className="space-y-4">
-						<div>
-							<Label htmlFor="username">Username</Label>
-							<Input
-								id="username"
-								{...register("username", {
-									required: "Username is required",
-									minLength: {
-										value: 3,
-										message: "Username must be at least 3 characters",
-									},
-									maxLength: {
-										value: 20,
-										message: "Username must be less than 20 characters",
-									},
-									pattern: {
-										value: /^[a-zA-Z0-9_]+$/,
-										message:
-											"Username can only contain letters, numbers, and underscores",
-									},
-								})}
-								placeholder={currentProfile.username}
-								className="mt-1"
+						<div className="flex flex-col gap-1">
+							<Label htmlFor="name">Name</Label>
+							<input
+								id="name"
+								{...register("name")}
+								placeholder={currentProfile.name || "Enter your name..."}
+								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
 							/>
-							{errors.username && (
-								<p className="text-sm text-red-500 mt-1">
-									{errors.username.message}
-								</p>
-							)}
 						</div>
-
-						<div>
+						<div className="flex flex-col gap-1">
+							<Label htmlFor="username">Username</Label>
+							<input
+								id="username"
+								{...register("username")}
+								placeholder={
+									currentProfile.username || "Enter your username..."
+								}
+								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+							/>
+						</div>
+						<div className="flex flex-col gap-1">
 							<Label htmlFor="bio">Bio</Label>
 							<textarea
 								id="bio"
-								{...register("bio", {
-									maxLength: {
-										value: 150,
-										message: "Bio must be less than 150 characters",
-									},
-								})}
+								{...register("bio")}
 								placeholder={currentProfile.bio || "Tell us about yourself..."}
-								className="mt-1 resize-none w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								className="mt-1 resize-none w-full px-3 py-2 border border-gray-300 rounded-md"
 								rows={3}
 							/>
-							{errors.bio && (
-								<p className="text-sm text-red-500 mt-1">
-									{errors.bio.message}
-								</p>
-							)}
 						</div>
-
-						<div>
+						<div className="flex flex-col gap-1">
 							<Label htmlFor="gender">Gender</Label>
 							<select
 								id="gender"
-								{...register("gender", {
-									required: "Gender is required",
-								})}
-								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								{...register("gender")}
+								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
 							>
 								<option value="male">Male</option>
 								<option value="female">Female</option>
 								<option value="other">Other</option>
 							</select>
-							{errors.gender && (
-								<p className="text-sm text-red-500 mt-1">
-									{errors.gender.message}
-								</p>
-							)}
 						</div>
+					</div>
 
-						<div>
-							<Label htmlFor="password">New Password (optional)</Label>
-							<Input
-								id="password"
+					{/* ✅ Change Password Section */}
+					<div className="space-y-4 border-t pt-4">
+						<h3 className="text-md font-semibold">Change Password</h3>
+						<div className="flex flex-col gap-1">
+							<Label htmlFor="currentPassword">Current Password</Label>
+							<input
+								id="currentPassword"
 								type="password"
-								{...register("password", {
-									minLength: {
-										value: 6,
-										message: "Password must be at least 6 characters",
-									},
-								})}
-								placeholder="Enter new password"
-								className="mt-1"
+								{...register("currentPassword")}
+								placeholder="Enter current password"
+								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
 							/>
-							{errors.password && (
-								<p className="text-sm text-red-500 mt-1">
-									{errors.password.message}
-								</p>
-							)}
-							<p className="text-sm text-gray-500 mt-1">
-								Leave blank to keep current password
-							</p>
+						</div>
+						<div className="flex flex-col gap-1">
+							<Label htmlFor="newPassword">New Password</Label>
+							<input
+								id="newPassword"
+								type="password"
+								{...register("newPassword")}
+								placeholder="Enter new password"
+								className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+							/>
+						</div>
+						<div className="flex items-center gap-2">
+							<input
+								id="revokeSessions"
+								type="checkbox"
+								{...register("revokeSessions")}
+								className="w-4 h-4"
+							/>
+							<Label htmlFor="revokeSessions">
+								Log out from other sessions
+							</Label>
 						</div>
 					</div>
 

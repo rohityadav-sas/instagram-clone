@@ -3,13 +3,13 @@ import { useFollowUser } from "@/hooks/useFollowUser"
 
 interface SuggestedUserCardProps {
 	username: string
-	profile_picture?: string
+	image?: string
 	bio?: string
 }
 
 const SuggestedUserCard = ({
 	username,
-	profile_picture,
+	image,
 	bio,
 }: SuggestedUserCardProps) => {
 	const { isFollowing, isLoading, toggleFollow } = useFollowUser(
@@ -20,7 +20,7 @@ const SuggestedUserCard = ({
 	return (
 		<div className="text-center p-4 border border-gray-200 rounded-lg flex flex-col items-center">
 			<Image
-				src={profile_picture ? profile_picture : "/default-avatar.svg"}
+				src={image ? image : "/default-avatar.svg"}
 				alt={username}
 				width={80}
 				height={80}

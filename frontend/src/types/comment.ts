@@ -3,12 +3,16 @@ export type Comment = {
 	text: string
 	author: {
 		username: string
-		profile_picture?: string
-		isVerified: boolean
+		image?: string
+		emailVerified: boolean
 	}
 	post: {
 		_id: string
 	}
-	likes: { username: string; profile_picture?: string; isVerified: boolean }[]
+	likes: {
+		username: string
+		image?: string
+		emailVerified: boolean
+	}[]
 	createdAt: string
 }

@@ -30,7 +30,7 @@ export const createStory = async (
 			author: userId,
 		})
 
-		await story.populate("author", "username profile_picture")
+		await story.populate("author", "username image")
 
 		res.status(201).json({
 			message: "Story created successfully",
@@ -78,7 +78,7 @@ export const getStories = async (
 		})
 			.populate({
 				path: "author",
-				select: "username profile_picture blocked_users",
+				select: "username image blocked_users",
 				match: { blocked_users: { $ne: userId } },
 			})
 			.sort({ createdAt: -1 })
@@ -157,7 +157,7 @@ export const getUserStories = async (
 			author: userId,
 			expiresAt: { $gt: new Date() }, // Only non-expired stories
 		})
-			.populate("author", "username profile_picture")
+			.populate("author", "username image")
 			.sort({ createdAt: -1 })
 
 		res.status(200).json({
@@ -185,7 +185,7 @@ export const getStoryById = async (
 
 		const story = await Story.findById(storyId).populate(
 			"author",
-			"username profile_picture"
+			"username image"
 		)
 
 		if (!story) {

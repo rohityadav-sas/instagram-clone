@@ -19,7 +19,7 @@ const CurrentUser = () => {
 		<div className="flex items-center gap-3 py-4">
 			<div className="relative flex-shrink-0">
 				<Image
-					src={logged_user.profile_picture || "/default-avatar.svg"}
+					src={logged_user.image || "/default-avatar.svg"}
 					alt={`${logged_user.username}'s avatar`}
 					width={40}
 					height={40}
@@ -33,9 +33,9 @@ const CurrentUser = () => {
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-1">
 					<span className="text-sm font-semibold text-gray-900 truncate">
-						{logged_user.username}
+						{logged_user.username || logged_user.name}
 					</span>
-					{logged_user.isVerified && (
+					{logged_user.emailVerified && (
 						<CheckCircle className="w-3 h-3 text-blue-500 flex-shrink-0" />
 					)}
 				</div>

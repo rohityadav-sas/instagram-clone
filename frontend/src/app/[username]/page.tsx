@@ -25,13 +25,14 @@ export default function Page() {
 		<div className="flex h-screen">
 			<Sidebar />
 			<About
+				fullname={data?.name}
 				username={data?.username}
-				profile_picture={data?.profile_picture}
+				image={data?.image}
 				gender={data?.gender}
 				bio={data?.bio}
 				followersCount={data?.followers.length}
 				followingCount={data?.following.length}
-				isVerified={data?.isVerified}
+				emailVerified={data?.emailVerified}
 				isUserLoading={isLoading}
 				isUserError={isError}
 				error={error?.message}

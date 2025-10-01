@@ -63,7 +63,7 @@ export const get_last_messages = async (req: Request, res: Response) => {
 			members: current_user._id,
 		})
 			.populate("last_message", "message createdAt")
-			.populate("members", "_id username profile_picture isVerified")
+			.populate("members", "_id username image emailVerified")
 			.select("-__v -updatedAt -createdAt")
 
 		const chatsWithoutCurrentUser = chat.map((c) => ({
@@ -98,7 +98,7 @@ export const get_last_messages = async (req: Request, res: Response) => {
 		const chatNotStarted = await User.find({
 			$or: [{ followers: current_user._id }, { following: current_user._id }],
 			_id: { $nin: chatUserIds },
-		}).select("_id username profile_picture isVerified")
+		}).select("_id username image emailVerified")
 
 		return res.status(200).json({
 			message: "Last messages retrieved successfully",

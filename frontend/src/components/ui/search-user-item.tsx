@@ -20,7 +20,7 @@ const SearchUserItem = ({ user }: SearchUserItemProps) => {
 	return (
 		<div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg">
 			<Image
-				src={user.profile_picture || "/default-avatar.svg"}
+				src={user.image || "/default-avatar.svg"}
 				alt={user.username}
 				width={44}
 				height={44}
@@ -40,7 +40,7 @@ const SearchUserItem = ({ user }: SearchUserItemProps) => {
 					>
 						{user.username}
 					</p>
-					{user.isVerified && (
+					{user.emailVerified && (
 						<CheckCircle className="w-3 h-3 text-blue-500 flex-shrink-0" />
 					)}
 				</div>

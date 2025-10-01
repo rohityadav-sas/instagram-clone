@@ -6,10 +6,14 @@ export type Post = {
 	image: string
 	author: {
 		username: string
-		profile_picture?: string
-		isVerified: boolean
+		image?: string
+		emailVerified: boolean
 	}
-	likes: { username: string; profile_picture?: string; isVerified: boolean }[]
+	likes: {
+		username: string
+		image?: string
+		emailVerified: boolean
+	}[]
 	isBookmarked: boolean
 	bookmarksCount: number
 	createdAt: string

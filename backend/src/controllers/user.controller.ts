@@ -1,126 +1,13 @@
 import { type Request, type Response } from "express"
 import User from "../models/user.model.js"
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
-import ENV from "../config/env.js"
 import cloudinary from "../config/cloudinary.js"
 import { get_data_uri } from "../utils/data_uri.js"
 import mongoose from "mongoose"
-import Post from "../models/post.model.js"
-import Comment from "../models/comment.model.js"
-import Story from "../models/story.model.js"
 import Notification from "../models/notification.model.js"
-
-export const register_user = async (req: Request, res: Response) => {
-	try {
-		const { username, email, password } = req.body
-		if (!username || !email || !password) {
-			if (!username) {
-				res.status(400).json({ message: "Username missing", success: false })
-				return
-			}
-			if (!email) {
-				res.status(400).json({ message: "Email missing", success: false })
-				return
-			}
-			if (!password) {
-				res.status(400).json({ message: "Password missing", success: false })
-				return
-			}
-		}
-		const user = await User.findOne({ $or: [{ username }, { email }] })
-		if (user) {
-			if (user.username === username) {
-				res
-					.status(400)
-					.json({ message: "Username already exists", success: false })
-				return
-			}
-			if (user.email === email) {
-				res
-					.status(400)
-					.json({ message: "Email already exists", success: false })
-				return
-			}
-		}
-		const hashed_password = await bcrypt.hash(password, 10)
-		await User.create({
-			username,
-			email,
-			password: hashed_password,
-		})
-		res
-			.status(201)
-			.json({ message: "Account created successfully", success: true })
-	} catch (err) {
-		console.error("Error registering user", err)
-		res.status(500).json({ message: "Internal server error", success: false })
-	}
-}
-
-export const login_user = async (req: Request, res: Response) => {
-	try {
-		const { email, password } = req.body
-		if (!email || !password) {
-			if (!email) {
-				res.status(400).json({ message: "Email missing", success: false })
-				return
-			}
-			if (!password) {
-				res.status(400).json({ message: "Password missing", success: false })
-				return
-			}
-		}
-		let user
-		if (!/\S+@\S+\.\S+/.test(email)) {
-			user = await User.findOne({ username: email })
-		} else {
-			user = await User.findOne({ email })
-		}
-		if (!user) {
-			res
-				.status(404)
-				.json({ message: "Account does not exist", success: false })
-			return
-		}
-		const isMatch = await bcrypt.compare(password, user.password)
-		if (!isMatch) {
-			res.status(401).json({ message: "Invalid password", success: false })
-			return
-		}
-
-		if (!ENV.JWT_SECRET) {
-			res.status(500).json({ message: "JWT_SECRET missing", success: false })
-			return
-		}
-
-		const token = jwt.sign({ id: user._id }, ENV.JWT_SECRET, {
-			expiresIn: "7d",
-		})
-		res
-			.cookie("token", token, {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === "production",
-				sameSite: "strict",
-				maxAge: 7 * 24 * 60 * 60 * 1000,
-			})
-			.status(200)
-			.json({ message: "Login successful", success: true })
-	} catch (err) {
-		console.error("Error logging in user", err)
-		res.status(500).json({ message: "Internal server error", success: false })
-	}
-}
-
-export const logout_user = (_: Request, res: Response) => {
-	try {
-		res.clearCookie("token")
-		res.status(200).json({ message: "Logout successful", success: true })
-	} catch (err) {
-		console.error("Error logging out user", err)
-		res.status(500).json({ message: "Internal server error", success: false })
-	}
-}
+import { auth } from "../auth/auth.js"
+import { fromNodeHeaders } from "better-auth/node"
+import { MongoServerError } from "mongodb"
+import { APIError } from "better-auth"
 
 export const get_profile = async (req: Request, res: Response) => {
 	try {
@@ -191,7 +78,7 @@ export const get_profile = async (req: Request, res: Response) => {
 export const get_current_user = async (req: Request, res: Response) => {
 	try {
 		const user_id = req.id
-		const user = await User.findById(user_id).select("-password -__v").lean()
+		const user = await User.findById(user_id).lean()
 		if (!user) {
 			res.status(404).json({
 				message: "User doesn't exist or account has been deleted",
@@ -219,45 +106,67 @@ export const edit_profile = async (req: Request, res: Response) => {
 		const user_id = req.id
 		const user = await User.findById(user_id)
 		if (!user) {
-			res.status(404).json({ message: "Unauthorized", success: false })
-			return
+			return res.status(404).json({ message: "Unauthorized", success: false })
 		}
-		const { username, password, bio, gender } = req.body
-		const profile_picture = req.file
+		const image = req.file
 		let cloud_response
-		if (profile_picture) {
+		if (image) {
 			cloud_response = await cloudinary.uploader.upload(
-				await get_data_uri(profile_picture),
+				await get_data_uri(image),
 				{
-					public_id: `instagram-clone/users/${user_id}/profile_picture`,
+					public_id: `instagram-clone/users/${user_id}/image`,
 					overwrite: true,
 				}
 			)
 		}
-		const existing_user = await User.findOne({
-			username,
-			_id: { $ne: user_id },
+		await auth.api.updateUser({
+			headers: fromNodeHeaders(req.headers),
+			body: {
+				...req.body,
+				...(cloud_response?.secure_url
+					? { image: cloud_response.secure_url }
+					: {}),
+			},
 		})
-		if (existing_user) {
-			res
-				.status(400)
-				.json({ message: "Username already exists", success: false })
-			return
-		}
 
-		if (username) user.username = username
-		if (password) user.password = await bcrypt.hash(password, 10)
-		if (bio !== undefined || bio !== null) user.bio = bio
-		if (gender) user.gender = gender
-		if (profile_picture && cloud_response)
-			user.profile_picture = cloud_response.secure_url
-		await user.save()
-		res
+		if (req.body.currentPassword && req.body.newPassword) {
+			await auth.api.changePassword({
+				headers: fromNodeHeaders(req.headers),
+				body: {
+					currentPassword: req.body.currentPassword,
+					newPassword: req.body.newPassword,
+				},
+			})
+		}
+		return res
 			.status(200)
 			.json({ message: "Profile updated successfully", success: true })
 	} catch (err) {
+		if (
+			err instanceof MongoServerError &&
+			err.name === "MongoServerError" &&
+			err.code === 11000
+		) {
+			return res
+				.status(400)
+				.json({ message: "Username already taken", success: false })
+		}
+		if (err instanceof APIError) {
+			if (err.body?.message === "Invalid password") {
+				return res
+					.status(400)
+					.json({ message: "Invalid password", success: false })
+			}
+			if (err.body?.message === "Password too short") {
+				return res
+					.status(400)
+					.json({ message: "Password too short", success: false })
+			}
+		}
 		console.error("Error editing user profile", err)
-		res.status(500).json({ message: "Internal server error", success: false })
+		return res
+			.status(500)
+			.json({ message: "Internal server error", success: false })
 	}
 }
 
@@ -329,9 +238,9 @@ export const get_suggested_users = async (req: Request, res: Response) => {
 			{
 				$project: {
 					username: 1,
-					profile_picture: 1,
+					image: 1,
 					bio: 1,
-					isVerified: 1,
+					emailVerified: 1,
 					followedBy: "$mutualFollowers.username", // mutual usernames
 					isFollowing: { $literal: false }, // keep shape same as frontend expects
 				},
@@ -461,7 +370,7 @@ export const search_users = async (req: Request, res: Response) => {
 				},
 			],
 		})
-			.select("username profile_picture bio isVerified followers")
+			.select("username image bio emailVerified followers")
 			.limit(limit)
 			.lean()
 
@@ -693,7 +602,7 @@ export const get_user_followers = async (req: Request, res: Response) => {
 			_id: { $in: user.followers, $nin: current_user.blocked_users },
 			blocked_users: { $ne: current_user_id },
 		})
-			.select("username full_name profile_picture isVerified")
+			.select("username full_name image emailVerified")
 			.lean()
 
 		// 🔥 Create a Set for O(1) lookup
@@ -797,7 +706,7 @@ export const get_user_following = async (req: Request, res: Response) => {
 			_id: { $in: user.following, $nin: current_user.blocked_users },
 			blocked_users: { $ne: current_user_id },
 		})
-			.select("username full_name profile_picture isVerified")
+			.select("username full_name image emailVerified")
 			.lean()
 
 		// Add following status for each user being followed
@@ -819,27 +728,5 @@ export const get_user_following = async (req: Request, res: Response) => {
 			success: false,
 		})
 		return
-	}
-}
-
-export const delete_account = async (req: Request, res: Response) => {
-	try {
-		const user_id = req.id
-		await cloudinary.uploader.destroy(
-			`instagram-clone/users/${user_id}/profile_picture`
-		)
-		await User.findByIdAndDelete(user_id)
-		await Post.deleteMany({ author: user_id })
-		await Story.deleteMany({ author: user_id })
-		await Comment.deleteMany({ author: user_id })
-		return res
-			.status(200)
-			.json({ message: "Account deleted successfully", success: true })
-	} catch (err) {
-		console.error("Error deleting user account", err)
-		return res.status(500).json({
-			message: "Internal server error",
-			success: false,
-		})
 	}
 }

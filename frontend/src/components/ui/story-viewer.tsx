@@ -217,10 +217,7 @@ const StoryViewer = ({
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
 										<Image
-											src={
-												currentStory.author.profile_picture ||
-												"/default-avatar.svg"
-											}
+											src={currentStory.author.image || "/default-avatar.svg"}
 											alt={currentStory.author.username}
 											width={32}
 											height={32}

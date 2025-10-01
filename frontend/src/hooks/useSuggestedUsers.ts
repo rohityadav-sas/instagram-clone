@@ -4,9 +4,9 @@ import axios_instance from "@/config/axios"
 export interface SuggestedUser {
 	_id?: string
 	username: string
-	profile_picture?: string
+	image?: string
 	bio?: string
-	isVerified?: boolean
+	emailVerified?: boolean
 	followedBy?: string[]
 	isFollowing?: boolean
 }

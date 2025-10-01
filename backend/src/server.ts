@@ -1,4 +1,4 @@
-import express, { urlencoded, type Response } from "express"
+import express, { urlencoded, type Response, type Request } from "express"
 import cors from "cors"
 import ENV from "./config/env.js"
 import cookie_parser from "cookie-parser"
@@ -12,9 +12,18 @@ import notification_routes from "./routes/notification.route.js"
 import { Server as IOServer } from "socket.io"
 import { createServer } from "http"
 import initSocket from "./socket/socket.js"
-
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node"
+import { auth } from "./auth/auth.js"
 const app = express()
 const httpServer = createServer(app)
+const io = new IOServer(httpServer, {
+	cors: {
+		origin: ENV.FRONTEND_URL,
+		methods: ["GET", "POST"],
+		credentials: true,
+	},
+})
+initSocket(io)
 
 app.use(
 	cors({
@@ -22,9 +31,11 @@ app.use(
 		credentials: true,
 	})
 )
+app.use(cookie_parser())
+
+app.all("/api/auth/*splat", toNodeHandler(auth))
 app.use(express.json())
 app.use(urlencoded({ extended: true }))
-app.use(cookie_parser())
 
 // Routes
 app.use("/api/users", user_routes)
@@ -34,19 +45,12 @@ app.use("/api/messages", message_routes)
 app.use("/api/stories", story_routes)
 app.use("/api/notifications", notification_routes)
 
-app.get("/api", (_, res: Response) => {
-	res.json({ message: "Hello from backend!" })
+app.get("/api", async (req: Request, res: Response) => {
+	const session = await auth.api.getSession({
+		headers: fromNodeHeaders(req.headers),
+	})
+	return res.json(session)
 })
-
-const io = new IOServer(httpServer, {
-	cors: {
-		origin: ENV.FRONTEND_URL,
-		methods: ["GET", "POST"],
-		credentials: true,
-	},
-})
-
-initSocket(io)
 
 httpServer.listen(ENV.PORT, () =>
 	connect_db().then(() =>

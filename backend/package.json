@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev:build": "tsc --watch",
 		"dev:start": "nodemon dist/server.js",
-		"build": "tsc",
+		"build": "npm install && tsc",
 		"start": "node dist/server.js"
 	},
 	"keywords": [],

@@ -12,7 +12,7 @@ import toast from "react-hot-toast"
 import { useUserStore } from "@/store/store"
 import { authClient } from "@/auth/auth-client"
 import axios_instance from "@/config/axios"
-import { useRouter } from "next/navigation"
+// import { useRouter } from "next/navigation"
 
 interface LoginFormData {
 	password: string
@@ -40,7 +40,7 @@ export function LoginForm({
 		})
 	}
 
-	const router = useRouter()
+	// const router = useRouter()
 
 	const forgotPassword = async () => {
 		const fn = async () => {
@@ -91,12 +91,12 @@ export function LoginForm({
 				})
 			}
 			if (response?.error) {
-				if (response.error.status === 403) {
+				if (response.error.status === 403)
 					throw new Error("Please verify your email address")
-				}
 				throw new Error(response.error.message)
 			}
-			if (response?.data?.user) router.push("/")
+			console.log(response)
+			// if (response?.data?.user) router.push("/")
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
 			return "Logged in successfully!"

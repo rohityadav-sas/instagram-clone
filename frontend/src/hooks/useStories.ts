@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react"
+import { useMemo, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import axios_instance from "@/config/axios"
 import toast from "react-hot-toast"
@@ -150,7 +150,7 @@ export const useStories = () => {
 			// Return a context object with the snapshotted value
 			return { previousStories }
 		},
-		onError: (err, storyId, context) => {
+		onError: (err, _storyId, context) => {
 			// If the mutation fails, use the context returned from onMutate to roll back
 			if (context?.previousStories) {
 				queryClient.setQueryData(["stories"], context.previousStories)

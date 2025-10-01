@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Plus, X, Upload } from "lucide-react"
+import { X, Upload } from "lucide-react"
 import Image from "next/image"
 import {
 	Dialog,

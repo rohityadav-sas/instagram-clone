@@ -2,12 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import axios_instance from "@/config/axios"
 import toast from "react-hot-toast"
-import { type Comment } from "@/types/comment"
-import { useUserStore } from "@/store/store"
 
 export const usePostComments = (postId: string) => {
 	const queryClient = useQueryClient()
-	const user = useUserStore((state) => state)
 
 	// Fetch comments from API
 	const {

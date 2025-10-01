@@ -12,7 +12,6 @@ import toast from "react-hot-toast"
 import { useUserStore } from "@/store/store"
 import { authClient } from "@/auth/auth-client"
 import axios_instance from "@/config/axios"
-// import { useRouter } from "next/navigation"
 
 interface LoginFormData {
 	password: string
@@ -39,8 +38,6 @@ export function LoginForm({
 			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
 		})
 	}
-
-	// const router = useRouter()
 
 	const forgotPassword = async () => {
 		const fn = async () => {
@@ -81,11 +78,13 @@ export function LoginForm({
 				response = await authClient.signIn.email({
 					email: email,
 					password: password,
+					callbackURL: "/",
 				})
 			} else if (username) {
 				response = await authClient.signIn.username({
 					username: username,
 					password: password,
+					callbackURL: "/",
 				})
 			}
 			if (response?.error) {
@@ -94,7 +93,6 @@ export function LoginForm({
 				throw new Error(response.error.message)
 			}
 			console.log(response)
-			// if (response?.data?.user) router.push("/")
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
 			return "Logged in successfully!"

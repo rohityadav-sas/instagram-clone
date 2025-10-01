@@ -214,7 +214,7 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url }) => {
 			url = url.replace(
 				/(callbackURL=)[^&]*/,
-				`$1${ENV.FRONTEND_URL}?acc=verified`
+				`$1${ENV.FRONTEND_URL}/login?acc=verified`
 			)
 			const html = `<!DOCTYPE html>
 <html lang="en">

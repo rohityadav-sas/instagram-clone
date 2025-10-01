@@ -54,7 +54,7 @@ export function SignupForm({
 				password,
 				username,
 				name,
-				callbackURL: "/",
+				callbackURL: "/login",
 			})
 			if (error) throw new Error(error.message)
 			const user_response = await axios_instance.get("/users/me")

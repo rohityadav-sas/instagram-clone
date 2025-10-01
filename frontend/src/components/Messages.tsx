@@ -14,7 +14,7 @@ import axios_instance from "@/config/axios"
 import toast from "react-hot-toast"
 import { Message } from "@/types/message"
 import ChatMessages from "@/components/ChatMessages"
-import { type lastMessage, type existingChat } from "@/types/conversation"
+import { type existingChat } from "@/types/conversation"
 
 const TypingIndicator = () => {
 	return (

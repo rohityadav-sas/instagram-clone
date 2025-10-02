@@ -40,6 +40,19 @@ export function SignupForm({
 
 	const password = watch("password")
 
+	const LoginWithGitHub = async () => {
+		await authClient.signIn.social({
+			provider: "github",
+			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+		})
+	}
+	const LoginWithGoogle = async () => {
+		await authClient.signIn.social({
+			provider: "google",
+			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+		})
+	}
+
 	const onSubmit = async ({
 		email,
 		name,
@@ -90,7 +103,7 @@ export function SignupForm({
 							<div className="flex flex-col items-center text-center">
 								<h1 className="text-2xl font-bold">Create your account</h1>
 								<p className="text-muted-foreground text-balance">
-									Join Fakegram and share your moments
+									Join Instagram and share your moments
 								</p>
 							</div>
 
@@ -226,6 +239,7 @@ export function SignupForm({
 									variant="outline"
 									type="button"
 									className="w-full cursor-pointer"
+									onClick={LoginWithGitHub}
 								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -242,6 +256,7 @@ export function SignupForm({
 									variant="outline"
 									type="button"
 									className="w-full cursor-pointer"
+									onClick={LoginWithGoogle}
 								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"

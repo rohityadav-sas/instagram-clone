@@ -13,6 +13,8 @@ const SuggestedAccountItem = ({ account }: SuggestedAccountItemProps) => {
 		account.username,
 		account.isFollowing || false
 	)
+	console.log(account.followedBy)
+
 	return (
 		<div className="flex items-center gap-3 py-2">
 			{/* Avatar */}

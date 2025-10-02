@@ -51,32 +51,28 @@ const CreatePostDialog = () => {
 		formData.append("caption", caption)
 
 		const fn = async () => {
-			try {
-				const response = await axios_instance.post("/posts/create", formData, {
-					headers: {
-						"Content-Type": "multipart/form-data",
-					},
-				})
+			const response = await axios_instance.post("/posts/create", formData, {
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			})
+			if (!response.data.success) throw new Error(response.data.message)
 
-				if (response.data.success) {
-					setCaption("")
-					setImage(null)
-					setPreview("")
-					setIsOpen(false)
-					queryClient.refetchQueries({ queryKey: ["profile-posts"] })
-				}
-			} catch (error) {
-				toast.error("Failed to create post")
-				console.error("Create post error:", error)
-			} finally {
-				setIsLoading(false)
+			if (response.data.success) {
+				setCaption("")
+				setImage(null)
+				setPreview("")
+				setIsOpen(false)
+				queryClient.refetchQueries({ queryKey: ["profile-posts"] })
 			}
 		}
-		toast.promise(fn(), {
-			loading: "Creating post...",
-			success: "Post created successfully!",
-			error: "Failed to create post",
-		})
+		toast
+			.promise(fn(), {
+				loading: "Creating post...",
+				success: "Post created successfully!",
+				error: (err) => err.message || "Something went wrong",
+			})
+			.finally(() => setIsLoading(false))
 	}
 
 	return (

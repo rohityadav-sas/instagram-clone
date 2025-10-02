@@ -48,6 +48,9 @@ export default function RouteGuard({
 		} else {
 			setLoading(false)
 		}
+		axios_instance.get("/users/me").then((response) => {
+			setUser(response.data.data)
+		})
 	}, [pathname, router])
 
 	if (loading) return null

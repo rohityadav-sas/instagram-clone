@@ -5,10 +5,8 @@
 	"main": "dist/server.js",
 	"type": "module",
 	"scripts": {
-		"dev:build": "tsc --watch",
-		"dev:start": "nodemon dist/server.js",
-		"build": "npm install && tsc",
-		"start": "node dist/server.js"
+		"build": "tsc --watch",
+		"dev": "nodemon dist/server.js"
 	},
 	"keywords": [],
 	"author": "",

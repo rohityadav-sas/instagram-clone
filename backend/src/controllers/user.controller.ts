@@ -221,7 +221,7 @@ export const get_suggested_users = async (req: Request, res: Response) => {
 			// Step 6: Lookup mutual follower usernames
 			{
 				$lookup: {
-					from: "users",
+					from: "user",
 					localField: "followers",
 					foreignField: "_id",
 					as: "mutualFollowers",

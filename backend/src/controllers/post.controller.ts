@@ -33,9 +33,11 @@ export const create_post = async (req: Request, res: Response) => {
 			author: req.id,
 		})
 		res.status(201).json({ message: "Post created", success: true })
-	} catch (err) {
+	} catch (err: any) {
 		console.error("Error creating post", err)
-		res.status(500).json({ message: "Internal server error", success: false })
+		res
+			.status(500)
+			.json({ message: err.message || "Internal server error", success: false })
 	}
 }
 
@@ -300,7 +302,7 @@ export const get_explore_posts = async (req: Request, res: Response) => {
 			// Lookup author and filter out users who blocked current user
 			{
 				$lookup: {
-					from: "users",
+					from: "user",
 					localField: "author",
 					foreignField: "_id",
 					as: "author",

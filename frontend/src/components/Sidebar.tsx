@@ -93,7 +93,6 @@ const Sidebar = () => {
 	const { startLoading, stopLoading } = useLoadingStore()
 	const image = useUserStore((state) => state.image)
 	const currentUsername = useUserStore((state) => state.username)
-	const clearUser = useUserStore((state) => state.clearUser)
 	const getActiveItem = (): SidebarItemType => {
 		if (pathname === "/") return "Home"
 		if (pathname === "/search") return "Search"

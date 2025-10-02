@@ -1,6 +1,6 @@
 import { CheckCircle, Grid3X3, Settings } from "lucide-react"
 import Image from "next/image"
-import React, { useEffect } from "react"
+import React from "react"
 import PostGrid from "./post-grid"
 import axios_instance from "@/config/axios"
 import { useQuery } from "@tanstack/react-query"
@@ -40,7 +40,6 @@ const About = ({
 	emailVerified = false,
 	isUserLoading,
 	isUserError,
-	error,
 	isOwnProfile = false,
 	isFollowing = false,
 	isBlocked = false,

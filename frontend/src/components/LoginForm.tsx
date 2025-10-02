@@ -31,17 +31,10 @@ export function LoginForm({
 		})
 	}
 	const LoginWithGoogle = async () => {
-		await authClient.signIn.social(
-			{
-				provider: "google",
-				callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
-			},
-			{
-				onSuccess: (ctx) => {
-					console.log(ctx)
-				},
-			}
-		)
+		await authClient.signIn.social({
+			provider: "google",
+			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+		})
 	}
 
 	const forgotPassword = async () => {

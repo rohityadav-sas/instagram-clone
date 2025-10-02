@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import axios from "@/config/axios"
 import { User } from "@/types/user"
+import axios_instance from "@/config/axios"
 
 interface UserListResponse {
 	message: string
@@ -23,7 +23,7 @@ export const useUserFollowers = (
 		queryFn: async (): Promise<User[]> => {
 			if (!username) throw new Error("Username is required")
 
-			const response = await axios.get<UserListResponse>(
+			const response = await axios_instance.get<UserListResponse>(
 				`/users/${username}/followers`
 			)
 			return response.data.data
@@ -41,7 +41,7 @@ export const useUserFollowing = (
 		queryFn: async (): Promise<User[]> => {
 			if (!username) throw new Error("Username is required")
 
-			const response = await axios.get<UserListResponse>(
+			const response = await axios_instance.get<UserListResponse>(
 				`/users/${username}/following`
 			)
 			return response.data.data
@@ -56,7 +56,7 @@ export const usePostLikes = (postId: string | undefined, enabled = true) => {
 		queryFn: async (): Promise<User[]> => {
 			if (!postId) throw new Error("Post ID is required")
 
-			const response = await axios.get<PostLikesResponse>(
+			const response = await axios_instance.get<PostLikesResponse>(
 				`/posts/${postId}/likes`
 			)
 			return response.data.data

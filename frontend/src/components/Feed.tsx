@@ -5,7 +5,6 @@ import Stories from "@/components/ui/stories"
 import Posts from "@/components/ui/posts"
 import { PostSkeleton } from "@/components/ui/skeleton"
 import { type Post } from "@/types/post"
-import toast from "react-hot-toast"
 import axios_instance from "@/config/axios"
 
 // Hook for feed data management with real API integration
@@ -35,10 +34,7 @@ const usePostsData = () => {
 			}
 		} catch (error) {
 			console.error("Error fetching posts:", error)
-			toast.error("Error fetching posts")
-			if (reset) {
-				setPosts([])
-			}
+			if (reset) setPosts([])
 		} finally {
 			setIsLoadingPosts(false)
 		}

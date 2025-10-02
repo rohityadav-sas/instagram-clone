@@ -119,8 +119,14 @@ const Sidebar = () => {
 
 	const handleLogout = async () => {
 		const logOut = async () => {
-			await authClient.signOut()
-			clearUser()
+			await authClient.signOut({
+				fetchOptions: {
+					onSuccess: () => {
+						localStorage.removeItem("bearer_token")
+						localStorage.removeItem("user-storage")
+					},
+				},
+			})
 			router.push("/login")
 			return "Logged out successfully!"
 		}

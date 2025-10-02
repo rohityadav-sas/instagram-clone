@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form"
 import Image from "next/image"
 import toast from "react-hot-toast"
 import { authClient } from "@/auth/auth-client"
+import { useSessionExpiredStore } from "@/store/store"
 
 interface LoginFormData {
 	password: string
@@ -30,10 +31,17 @@ export function LoginForm({
 		})
 	}
 	const LoginWithGoogle = async () => {
-		await authClient.signIn.social({
-			provider: "google",
-			callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
-		})
+		await authClient.signIn.social(
+			{
+				provider: "google",
+				callbackURL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+			},
+			{
+				onSuccess: (ctx) => {
+					console.log(ctx)
+				},
+			}
+		)
 	}
 
 	const forgotPassword = async () => {
@@ -75,21 +83,27 @@ export function LoginForm({
 				response = await authClient.signIn.email({
 					email: email,
 					password: password,
-					// callbackURL: "/",
+					callbackURL: "/",
 				})
 			} else if (username) {
-				response = await authClient.signIn.username({
-					username: username,
-					password: password,
-					// callbackURL: "/",
-				})
+				response = await authClient.signIn.username(
+					{
+						username: username,
+						password: password,
+					},
+					{
+						onSuccess: () => {
+							window.location.href = "/"
+						},
+					}
+				)
 			}
 			if (response?.error) {
 				if (response.error.status === 403)
 					throw new Error("Please verify your email address")
 				throw new Error(response.error.message)
 			}
-
+			useSessionExpiredStore.getState().setSessionExpired(false)
 			return "Logged in successfully!"
 		}
 

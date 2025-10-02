@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth"
 import { MongoClient } from "mongodb"
 import { mongodbAdapter } from "better-auth/adapters/mongodb"
 import ENV from "../config/env.js"
-import { username } from "better-auth/plugins"
+import { username, bearer } from "better-auth/plugins"
 import { type BetterAuthPlugin } from "better-auth"
 import cloudinary from "../config/cloudinary.js"
 import Post from "../models/post.model.js"
@@ -11,6 +11,7 @@ import Comment from "../models/comment.model.js"
 import { sendEmail } from "../config/nodemailer.js"
 import type { GithubProfile, GoogleProfile } from "better-auth/social-providers"
 import User from "../models/user.model.js"
+import { socialBearer } from "../plugins/socialBearer.js"
 const client = new MongoClient(ENV.MONGODB_URI)
 const db = client.db()
 
@@ -293,7 +294,7 @@ export const auth = betterAuth({
 		},
 	},
 	trustedOrigins: [ENV.FRONTEND_URL],
-	plugins: [username() as BetterAuthPlugin],
+	plugins: [username() as BetterAuthPlugin, bearer(), socialBearer()],
 	user: {
 		deleteUser: {
 			enabled: true,
@@ -308,7 +309,7 @@ export const auth = betterAuth({
 			sendDeleteAccountVerification: async ({ url, user }) => {
 				url = url.replace(
 					/(callbackURL=)[^&]*/,
-					`$1${ENV.FRONTEND_URL}?acc=deleted`
+					`$1${ENV.FRONTEND_URL}/login?acc=deleted`
 				)
 				const html = `
   <!DOCTYPE html>

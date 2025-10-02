@@ -114,9 +114,9 @@ const EditProfileDialog = ({
 		if (data.currentPassword && data.newPassword) {
 			submitData.currentPassword = data.currentPassword
 			submitData.newPassword = data.newPassword
-			if (data.revokeSessions && data.revokeSessions) {
-				authClient.revokeOtherSessions()
-			}
+		}
+		if (data.revokeSessions && data.revokeSessions) {
+			authClient.revokeOtherSessions()
 		}
 
 		if (Object.keys(submitData).length === 0) {

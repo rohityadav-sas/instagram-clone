@@ -91,10 +91,19 @@ const useLastMessagesStore = create<{
 	setLastMessage: (lastMessage) => set({ lastMessages: { ...lastMessage } }),
 }))
 
+const useSessionExpiredStore = create<{
+	sessionExpired: boolean
+	setSessionExpired: (expired: boolean) => void
+}>((set) => ({
+	sessionExpired: false,
+	setSessionExpired: (expired) => set({ sessionExpired: expired }),
+}))
+
 export {
 	useUserStore,
 	useOnlineUsersStore,
 	useUnreadStore,
 	useSocketStore,
 	useLastMessagesStore,
+	useSessionExpiredStore,
 }

@@ -206,10 +206,10 @@ export default function EmailVerifiedSuccess() {
 					{/* Login Link */}
 					<motion.div variants={itemVariants} className="text-center">
 						<a
-							href="/login"
+							href="/profile"
 							className="inline-block px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-300"
 						>
-							Continue to Login
+							Back to Instagram
 						</a>
 					</motion.div>
 				</motion.div>

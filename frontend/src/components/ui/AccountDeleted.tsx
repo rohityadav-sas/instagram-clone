@@ -6,8 +6,7 @@ import { useEffect } from "react"
 
 export default function AccountDeletionSuccess() {
 	useEffect(() => {
-		const { pathname } = window.location
-		window.history.replaceState({}, "", pathname)
+		window.history.replaceState({}, "", "/")
 	}, [])
 	return (
 		<div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -81,13 +80,13 @@ export default function AccountDeletionSuccess() {
 						transition={{ delay: 0.7 }}
 						className="space-y-3"
 					>
-						<a href="/">
+						<a href="/login">
 							<motion.button
 								whileHover={{ scale: 1.02 }}
 								whileTap={{ scale: 0.98 }}
 								className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/50 transition-shadow cursor-pointer"
 							>
-								Return to Homepage
+								Return to Login
 								<ArrowRight className="w-5 h-5" />
 							</motion.button>
 						</a>

@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form"
 import Image from "next/image"
 import toast from "react-hot-toast"
 import axios_instance from "@/config/axios"
-import { useUserStore } from "@/store/store"
+import { useSessionExpiredStore, useUserStore } from "@/store/store"
 import { authClient } from "@/auth/auth-client"
 
 interface SignupFormData {
@@ -59,6 +59,7 @@ export function SignupForm({
 			if (error) throw new Error(error.message)
 			const user_response = await axios_instance.get("/users/me")
 			setUser(user_response.data.data)
+			useSessionExpiredStore.getState().setSessionExpired(false)
 			return "Registration successful!"
 		}
 

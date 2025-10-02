@@ -86,7 +86,7 @@ const About = ({
 		queryKey: ["profile-bookmarks"],
 		queryFn: async () => {
 			const { data } = await axios_instance.get(`/posts/bookmarks`)
-			return data.data
+			return data.data || []
 		},
 		enabled: !!username,
 	})
@@ -97,12 +97,6 @@ const About = ({
 		isLoading: isFollowLoading,
 		toggleFollow,
 	} = useFollowUser(username, isFollowing, followersCount)
-
-	useEffect(() => {
-		if (isUserError) {
-			toast.error(error || "Error loading user data")
-		}
-	}, [isUserError, error])
 
 	if (isUserLoading) {
 		return (

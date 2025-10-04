@@ -38,6 +38,7 @@ A full-stack Instagram clone built with modern web technologies, featuring real-
 ### Chat
 
 <img src="assets/preview9.png" alt="Login" width="800"/>
+<hr>
 <img src="assets/preview10.png" alt="Registration" width="800"/>
 
 ### Notifications
